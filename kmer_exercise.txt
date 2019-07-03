@@ -1,0 +1,431 @@
+Genome Size Estimation Tutorial
+¶
+Tutorial Outline¶
+1. How can K-mer estimation help to find genome sizes?
+2. k-mer Distribution of a Typical Real World Genome
+1. k-mer size
+2. Counting k-mers in different genomes
+3. Workflow
+3. Count k-mer occurrence in a bacteria using Jellyfish 2.2.10
+4. Generate histogram using R
+5. Determine the single copy region and the total k-mers
+6. Determine peak position and genome size
+7. Compare the peak shape with Poisson distribution
+8. GenomeScope
+
+1. How can K-mer estimation help to
+find genome sizes?
+For a given sequence of length L, and a k-mer size of k, the total number of k-mer’s possible will be given
+by __( L – k ) + 1__
+e.g. In a sequence of length of 14, and a k-mer length of 8, the number of k-mer’s generated will be:
+
+# GATCCTACTGATGC (L) on decomposition of k-mers of length (k),
+L = 14;
+
+k = 8;
+
+# Total number of k-mer's generated will be
+n
+
+= ( L - k ) + 1
+= (14 - 8 ) + 1
+= 7
+
+GATCCTAC, ATCCTACT,TCCTACTG,CCTACTGA,CTACTGAT,TACTGATG,ACTGATGC
+For shorter fragment sizes, as in the above example, the Total number of k-mers estimated is n = 7, and it
+is not close to actual fragment size of L which is 14 bps. But for larger fragment size, the total number of kmer’s (n) provide a good approximation to the actual genome size. The following table tries to illustrate
+the approximation:
+Genome Sizes Total K-mers of k=18 % error in genome
+(L)
+
+N=(L-K)+1
+
+estimation
+
+100
+
+83
+
+17
+
+1000
+
+983
+
+1.7
+
+10000
+
+9983
+
+0.17
+
+100000
+
+99983
+
+0.017
+
+1000000
+
+999983
+
+0.0017
+
+So for a genome size of 1 Mb, the error between estimation and reality is only .0017%. Which is a very
+good approximation of actual size.
+Let's say your genome consists of 10 copies (C) of the sequence GATCCTACTGATGC. Then the total
+number of k-mer’s (n) of length k = 8 will be 70.
+
+n
+
+= [( L - k ) + 1 ] * C
+= [(14 - 8 ) + 1] * 10
+= 70
+
+In this case we've overestimated the genome size because there were ten identical copies of the genome.
+To get the actual genome size, we simply need to divide the total kmers by the number of copies:
+
+= n / C
+= 70 / 10
+= 7
+
+2. k-mer Distribution of a Typical
+Real World Genome
+High throughput sequencing enables the sequencing of novel genomes on a daily basis. However, even the
+most basic characteristics of these genomes, such as their size or heterozygosity rate, may be initially
+unknown A major issue that is faced in real world genome sequencing projects is non-uniform coverage of
+genome. This can be accounted to technical and biological variables.
+Example: biased amplification of certain genomic regions during PCR (a step in preparation of sequencing
+libraries) and presence of repetitive sequences in genome.
+
+A. k-mer size:
+The size of k-mers should be large enough allowing the k-mer to map uniquely to the genome (a concept
+used in designing primer/oligo length for PCR). Too large k-mers leads to overuse of computational
+resources.
+In the first step, k-mer frequency is calculated to determine the coverage of genome achieved during
+sequencing. There are software tools like Jellyfish that helps in finding the k-mer frequency in sequencing
+projects. The k-mer frequency follows a pseudo-normal distribution (actually it is a Poisson distribution)
+around the mean coverage in the histogram of k-mer counts.
+Once the k-mer frequencies are calculated, a histogram is plotted to visualize the distribution and to
+calculate mean coverage.
+
+Figure 1: An example of a k-mer histogram. The x-axis (V1), is the frequency or the number of times a
+given k-mer is observed in the sequencing data. The y-axis (V2), is the total number of k-mers with a given
+frequency.
+The first peak (in red region) is primarily due to rare and random sequencing errors in reads. The values in
+the graph can be trimmed to remove reads with sequencing errors.
+
+With the assumption that k-mers are uniquely mapped to the genome, they should be present only once in
+a genome sequence. So their frequency will reflect the coverage of the genome.
+For calculation purposes we use the mean of the coverage which is 14 in above graph. The area under the
+curve will represent the total number of k-mers.
+So the genome estimation will be:
+
+N = Total no. of k-mers/Coverage
+= Area under curve /mean coverage(14)
+
+B. Counting k-mers in genomes
+In organisms with diploid genomes, k-mers are generated from both homologous chromosomes and
+counting k-mers in regions of the genome where there is not genetic variation will result in k-mers being
+counted at a rate of 2X the read coverage. In heterozygous regions of the genome, k-mer sequences are
+unique to the polymorphism on a particular chromosome and these k-mers are counted at a rate of 1X
+read coverage. Below is a figure that depicts how heterozygous sites (red and green) in a genome changes
+the coverage of k-mers compared to homozygous regions (blue).
+
+Often in sequencing project, we do not know the heterozygosity of an organism but heterozygosity creates
+a characteristics "double" peak in the k-mer profile and the ratio of single (1X) to double (2X) copy k-mers
+can be used to estimate heterozygosity. Below is a figure that depicts the single and double copy peaks for
+organisms with different levels of heterozygosity. Note that low heterozygosity results in more double copy
+k-mers and high heterozygosity results in more single copy peaks.
+
+In organisms with haploid genomes (i.e. most bacteria), mapping k-mers is slightly different because
+these genomes have only a single circular chromosome and essentially zero heterozygosity. As a result,
+the k-mer profiles will be primarily dominated by a large peak representing the single copy (1X) or haploid
+part of the genome. It should be noted that a slight shoulder peak on the right can occur and this could
+represent repetitive regions of the genome or genes the were recently duplicated.
+
+C. Workflow
+The study was conducted to estimate the genome size of the species with low coverage short read data to
+validate existing estimates (flow cytometry sourced) or produce a new computational estimate. The
+genome size is calculated from short sub-sequences (k-mers) of Illumina short read data. A larger k-mer
+size needs to be considered for the genome estimation.
+Reads should be quality controlled before the genome estimate is provided. Numerous programs exist for
+this purpose but Sickle (https://github.com/ucdavis-bioinformatics/sickle) is the application of choice in this
+tutorial. We require a minimum Phred-scaled quality value of 25-30 for estimates.
+Upon performing quality control, the k-mer distribution was calculated using the Jellyfish k-mer counting
+program. Then a histogram was constructed to perform the genome estimation using the same program.
+The R statistical package is used to plot the binned distributions for the selected k-mer lengths. Initally the
+full data set is plotted and initial data points are often very high number due to the low frequency data
+points, and thus it should be avoided. Once the peak position is determined the total number of k-mers in
+the distribution is calculated, and then the genome size can be estimated using the peak position. In the
+ideal situation (or theoretically) the peak shape should be a Poisson distribution. In order to come up with a
+k-mer size a number of k-mer sizes are selected and genome estimation is done, where we see a regular
+distribution of the genome size.
+
+3. Count k-mer occurrence in a
+bacteria using Jellyfish 2.2.10
+To begin this exercise, we need to determine where the data sets are available on the server:
+
+Path: /home/WWU/BIOL497R/data/jellyfish/
+Data sets: SRR292770_1.fastq
+
+SRR292770_2.fastq
+
+To run jellyfish, you can use the command below or open a ssh terminal connection to the class server,
+navigate to working directory, and execute the follwoing BASH command:
+In [17]:
+
+%%bash
+#location of sequence data
+DATA=/home/WWU/BIOL497R/data/jellyfish/
+jellyfish count -t 3 -C -m 14 -s 5G -o 14mer_out --min-qual-char=? \
+
+$DATA/SRR292770_1.fastq $DATA/SRR292770_2.fastq
+options used in the counting k-mers:
+-t -treads=unit32 Number of treads to be used in the run. eg: 1,2,3,..etc
+-C -both-strands Count both strands
+-m -mer-len=unit32 Length of the k-mer
+-s -size=unit32 Hash size / memory allocation
+-o -output=string Output file name
+--min-quality-char Base quality value. Version 2.2.10 of Jellyfish uses the “Phred” score,
+where "?" = 30
+If you need to look at a detailed usage of ‘count’ in jellyfish, type the following commands into a command
+line:
+jellyfish [options]
+jellyfish count --help
+jellyfish count --full-help
+Once the run is complete jellyfish will create a output (-o) file called 14mer_out. Then using the above
+created file (14mer_out), data points for a histogram will be created using the following command:
+In [18]:
+
+%%bash
+jellyfish histo -o 14mer_out.histo 14mer_out
+If you open the .histo file head 14mer_out.histo, it will have the frequency counting of each k-mer with
+the k-mer length of 14.
+In [1]:
+
+%%bash
+head -n 20 14mer_out.histo
+1 11701547
+2 1440988
+3 173094
+4 23576
+5 4701
+6 2478
+7 2668
+8 3463
+9 4370
+10 5323
+11 6526
+
+12 8185
+13 9936
+14 11847
+15 14497
+16 17071
+17 20051
+18 22824
+19 26612
+20 30518
+
+4. Generate histogram using R
+To visualize and to plot the data we use R Studio. Using the following command, we will load the data from
+the out_14mer.histo file in to a data frame called dataframe14.
+In [4]:
+
+%%R
+dataframe14 <- read.table("14mer_out.histo") #load the data
+plot(dataframe14[1:200,], type="l") #plots the data points 1 through 200 in the
+dataframe14 using a line
+abline(v = 10, col="blue") #blue represents potential boundry between sequencing errors
+(left) and real k-mers (right)
+
+In general, very low frequency k-mers (1:10) represent sequencing errors and high numbers that would
+skew the y–axis. If we look at the data points in the histogram file, we can see that the very first data point
+has a exceptionally high value than the next (second) data point. So we remove just the first few lines and
+re-plot using R. From now on we will disregard the first few data points for our calculations.
+In [3]:
+
+%%R
+plot(dataframe14[11:200,], type="l")
+
+5. Determine the single copy region
+and the total number of k-mers
+To determine the cut off points in the single copy region, we need to see the actual data point positions in
+the graph. In the initial examination the peak starts from the 11th data point onward. So we will disregard
+data points 1 to 10 in determining the single copy region and we don't want to include the right tail
+because that would represent double copy k-mers.
+Now using R we will re-plot the graph to determine the single copy region. Then we will include the points
+for clarity on the same graph.
+In [4]:
+
+%%R
+plot(dataframe14[11:200,], type="l") #plot line graph
+points(dataframe14[11:200,]) #plot the data points from 2 through 200
+abline(v = c(11,80), col="red") #reds represent potential boundries of single copy
+region
+
+According to the graph, the single copy region would be between points 11 and 80.
+Assuming the total number of data points is 748, we can now calculate the total k-mers in the distribution.
+In [7]:
+
+%%R
+n = nrow(dataframe14)
+sum(as.numeric(dataframe14[11:n,1]*dataframe14[11:n,2]))
+[1] 242384628
+
+6. Determine peak position and
+genome size
+From the plotted graph we can get an idea where the peak position lies, and it should be between 35-55
+data points. Now to determine the peak, thus, we need to look at the actual data points in that region.
+Using the below command we will examine the actual data points between 35 and 55.
+In [8]:
+
+%%R
+dataframe14[35:55,]
+V1
+
+V2
+
+35 35 108058
+36 36 112875
+37 37 117894
+38 38 121401
+39 39 125342
+40 40 128411
+41 41 130911
+42 42 132084
+43 43 133346
+44 44 133554
+45 45 132929
+46 46 131703
+47 47 130129
+48 48 127513
+49 49 123156
+50 50 119657
+51 51 114952
+52 52 109919
+53 53 105177
+54 54 100541
+55 55
+
+95677
+
+In this case it looks like the peak is at, 44. We can confirm this using the max function.
+In [9]:
+
+%%R
+dataframe14$V1[dataframe14$V2 == max(dataframe14[35:55,2])]
+[1] 133554
+So the Genome Size can be estimated as:
+In [10]:
+
+%%R
+# lambda is our estimate of the mean coverage
+lambda = 44
+n = nrow(dataframe14)
+
+(totalGenome = sum(dataframe14[11:n,1]*dataframe14[11:n,2])/lambda)
+[1] 5508742
+It would be interesting to see the proportionality of the single copy region compared to the total genome
+size. In this data set the single copy region is between data point 11 and 80, So the size of single copy
+region can be roughly calculated as:
+In [11]:
+
+%%R
+(singleCopy = sum(as.numeric(dataframe14[11:80,1]*dataframe14[11:80,2]))/lambda)
+[1] 4663942
+The proportion can be calculated as:
+In [12]:
+
+%%R
+singleCopy / totalGenome
+[1] 0.8466437
+
+7. Compare the peak shape with
+Poisson distribution
+Since we have a nice curve, we can compare our single copy curve to a theoretical curve, which is the
+Poission distribution. Note, we don't want to compare the total genome to a Poisson distribution because
+the total genome would be a mixture of multiple distributions.
+The original mathmatical models for estimating genome size were based on a Poisson distribution but this
+approach has changed because real sequencing data is often over-dispersed compared to a Poisson
+distribution (as seen below) and bimodal (see section 2B).
+In [13]:
+
+%%R
+#poission distribution
+poisdtb <- dpois(1:80,lambda)*singleCopy
+plot(poisdtb, type='l', lty=2, col="red")
+#k-mer distribution
+
+lines(dataframe14[11:80,lambda] * singleCopy, type = "l", col=3)
+lines(dataframe14[11:80,],type= "l")
+
+Likewise the procedure can be iterated across different k-mers lengths.
+K-mer length 12
+Total No. of
+fields
+Total K-mer
+count
+Genome Size
+Single copy
+region
+Proportion
+
+14
+
+--- 962
+
+16 18 20 22
+--- --- --- ---
+
+--- 342245162 --- --- --- ----- 5508742
+
+--- --- --- ---
+
+--- 4663942
+
+--- --- --- ---
+
+--- 0.85
+
+--- --- --- ---
+
+8. GenomeScope
+In this next section, we will use GenomeScope which fits a mixture model of four evenly spaced negative
+binomial distributions to the k-mer profile to measure the relative abundances of heterozygous and
+homozygous, unique or single (1X) and two-copy (2X) sequences.
+
+Results - GenomeScope version 1.0¶
+k = 14
+property
+Heterozygosity
+
+min
+0.161481%
+
+max
+0.175063%
+
+Genome Haploid Length 5,354,860 bp 5,362,681 bp
+Genome Repeat Length 863,969 bp
+
+865,231 bp
+
+Genome Unique Length 4,490,891 bp 4,497,450 bp
+Model Fit
+
+95.0008%
+
+96.8218%
+
+Read Error Rate
+
+0.504395%
+
+0.504395%
+
+In [ ]:
+
+

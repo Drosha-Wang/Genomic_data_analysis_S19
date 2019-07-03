@@ -1,0 +1,298 @@
+Read Processing
+¶
+Tutorial Outline¶
+1. Getting ready
+2. Downloading reads from SRA
+3. Raw read quality
+4. Adapter removal
+5. Low quality trimming and filtering
+6. Processed read quality
+7. There's more...
+
+1. Getting ready
+Raw sequence reads are typically stored in fastq file format (https://en.wikipedia.org/wiki/FASTQ_format).
+Before we can begin our analysis of the sequence data, we have to process the raw reads. Why? Well, raw
+reads often contain adapter sequences that were added in the library preparation that will not match the
+source genome(s) for the reads. Additionally, the quality (confidence in the base call) can be low overall for
+a read or low at the 3' end where errors are more likely. To deal with these issues we can run computer
+programs that edit reads or filter out low quality reads. Instead of blindly running these programs and
+assuming all is well with our reads, we typically run a quality control analysis before and after read
+processing to see if the read processing succeeded and to catch any additional issues with our reads that
+may not be dealt with by the read processing we did.
+
+2. Downloading reads from SRA
+Before we dig into read processing, we will first learn how to download fastq files for specific accession IDs
+in the SRA database.
+For this lab tutorial we have selected a microbial RNAseq dataset:
+https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP001753
+
+This dataset is unusually small, making it a nice example to get started on so that you are not stuck
+waiting for lengthy downloads or read processing steps. Keep in mind that these steps will take longer for
+most datasets.
+We will download the four fastq files in the dataset using a bash script that we already wrote for you. Let's
+look at it.
+In [ ]:
+
+%%bash
+cat fastq_dump.sh
+The fastq-dump command is from the Sequence Read Archive Toolkit (http://ncbi.github.io/sra-tools/) that
+we have already installed on the server and put into your path. If you wanted to use the toolkit on a
+different computer, you would need to install it.
+fastq-dump takes an accession number (e.g. SRR034450). Every entry in the SRA database has its own
+accession number. fastq-dump downloads the fastq file associated with that accession number to the
+directory that it is run in.
+We added echo and date commands to the bash script so that we could follow the progress of the
+downloads. In this case the files are relatively small and the downloading should happen quickly (~10min)
+so this information isn't particularly important. However, if you were working with really big files (as you
+will later in the course), knowing how the download is going and how long it is taking would very helpful.
+You can run fastq_dump.sh in this notebook, however the output won't be printed to the screen until after
+it completes. If you want to see the output as the script is running, then run the following command (not
+including the %%bash) in the terminal.
+In [ ]:
+
+%%bash
+bash fastq_dump.sh
+Let's have a look at the first ten lines of each of the files we just downloaded.
+In [ ]:
+
+%%bash
+head *.fastq
+What did you learn looking at the first ten lines of the four fastq files?
+
+3. Raw read quality
+Before we begin processing the fastq files, it is good to run a quality control analysis to have a baseline for
+
+the quality of the raw reads.
+We have installed a program called fastqc (https://anaconda.org/bioconda/fastqc) on the server that runs
+a standard quality control analysis on a fastq file and outputs an .html report file that can be viewed in a
+web browswer.
+We have written a script that will run fastqc on all of the fastq files in the current directory. Let's have a
+look at it.
+In [ ]:
+
+%%bash
+cat fastqc_dir.sh
+Do you understand what the bash script is doing?
+OK, let's run the bash script. Again, you can run it here in the notebook and not see the output until it is
+done running or you can run it in the terminal and see the output while it is running.
+In [ ]:
+
+%%bash
+bash fastqc_dir.sh
+Now let's open up one of the .html output files in from the Jupyter file browser page that you logged in on.
+A table at the top of the file gives you some basic stats.
+Next are a series of many different graphs and tables.
+
+Per base sequence quality¶
+Here is an example of the first graph, the per base sequence quality:
+
+The y-axis is the quality score and the x-axis is the position in the read (basepairs 1-36). There is both a
+boxplot (yellow boxes with a red median) and a mean trace (blue). The quality scores in this graph and
+elsewhere in the analysis are what are called Phred quality scores. A Phred quality score of 32 means the
+sequencing machine estimated the probability of getting the base wrong as $10^{-3.2}$. So higher scores
+correspond with lower probabilities of errors. An quality score of 20 or above (less than 1 in 100 chance of
+error) is generally considered acceptable and below 20 is generally considered unacceptable.
+In this example plot, the quality at positions 1-20 looks good and then 3' of position 20 the level of error is
+concerning. Typically the 3' end of the reads has a dip in quality. However the dip starts closer to the
+beginning of the read than is typical and the degree to which it dips is also unusual.
+
+Per tile sequence quality¶
+The next plot is the per tile sequence quality. This is showing you how sequence quality relates to the
+physical location of reads on the flow cell. It should not be highly spacially structured. If it is then
+something might have done wrong with how the sequencing machine was run. If a sequencing facility did
+your sequencing it is possible they would redo it if the overall quality is low and it is highly spacially
+
+structured.
+
+Per sequence quality scores¶
+The next plot is a histogram of the per read average quality score.
+
+In the graph above, the mode is 30, which isn't great. The long left tail of the distribution indicates there
+are many low quality reads.
+
+Per base sequence content¶
+The next graph shows the percentage nucleotide composition on the y-axis and position in read on the xaxis. The percentages should be consistent across positions. Many organisms have have an uneven GC vs
+AT content which could be reflected in graph.
+
+In this example the GC content is high relative to AT for the first ~5-10bp but then levels off. This kind of
+skew is very common in fragmented and randomly primed libraries, which this is an example. See this
+discussion for more information: https://sequencing.qcfail.com/articles/positional-sequence-bias-in-randomprimed-libraries/
+
+Per sequence GC content¶
+The next graph is a histogram of the percentage GC of the reads. It should look normally distributed.
+
+Per base N content¶
+Reads near the edges of a flow cell can be difficult to image and make base calls for. This can result in
+insufficient information to make a base call and the sequencing machine may put an 'N' in place of a
+nucleotide in the read sequence, where 'N' represents any possible nucleotides [ATCG]. This next graph
+shows the percentage of reads with an N at each position. This should be very close to zero.
+
+Sequence length distribution¶
+The next graph shows the histogram of sequence lengths.
+
+Sequence duplication levels¶
+There are numerous reasons why duplicate reads may appear in a dataset. The main reasons that can be
+of some concern are if the sample was contaminated or if PCR amplification steps in the library preparation
+had a biased outcome where some reads were highly replicated while others were not. However the design
+of the experiment can produce duplication that is not of concern. For example, very deep sequencing (high
+coverage) or high representation of specific sequences (say a highly expressed gene in an RNAseq
+experiment) can naturally result in duplication that is fine.
+The next graph plots percentage of reads vs level of duplication (replication) as a blue line. The reads used
+for the graph are just the first 100,000 sequences in the fastq file (but it checks the whole file to see if
+those 100,000 reads are duplicated). The red line on the graph is not particularly intuitive. It takes those
+100,000 reads, imagines the fastq file without any duplicates, and asks what percentage of the new file do
+these reads make up. It then plots the reads with the same x-axis value as they had for the blue line, but
+now with updated percentages based on a shrunk de-deduplicated fastq file.
+The goal of looking at this graph is to determine if it looks like you have a concerning level of duplication.
+Unfortunately, it isn't really enough information for you to distinguish OK cases of duplication from
+problematic ones. What the graph can do is tell you if there is a lot of duplication (unique sequences are
+<80% of total) and then you can look further to see if this seems to be the result of good or bad
+duplication.
+
+In this example, there is definitely a lot of duplication and very high levels of duplication as well. This is an
+RNAseq experiment so it could be the result of highly expressed genes but it also could be something bad.
+fastqc returned a failed test for sequence duplication levels, suggesting these are not ordinary levels of
+duplication. It is certainly worth looking into further.
+
+Overrepresented sequences¶
+Another way to look at duplication of reads is to list all of the most duplicated sequences and attempt to
+figure out if they are common contaminants in sequencing experiments. fastqc reports all reads that
+make up more than 0.1% of the fastq file. For each it searches a database of sequences that are common
+contaminants and either reports the match or reports that no hit was found.
+
+In this example, 60 overrepresented sequences were found. The top of the table is shown above. None of
+the overrepresented sequences matched the database of known contaminants. It is always worth taking
+some of the overrepresented reads in this table and Blasting them (https://blast.ncbi.nlm.nih.gov/Blast.cgi)
+to make sure they map to the species you are studying. In this case, the most overrepresented sequence
+is a 100% match to the Listeria monocytogenes genome. So this doesn't rule out PCR bias but the
+duplication may just be from highly expressed genes.
+
+Adapter content¶
+When the DNA being sequenced is shorter than the length of the read, the read can continue into the
+adaptor on the 3' end of the read. fastqc searches for common adaptors and then reports this next graph
+showing the percentage of reads containing a match to an adaptor at each position in the read. It is very
+standard to run an adaptor removal step in read processing.
+
+Look over all of your fastqc files¶
+Look through all of your fastqc files to get a sense for the baseline issues that may or may not be delt with
+in the read processing.
+
+4. Adapter removal
+As we learned at the end of the fastqc analysis, adapter sequences can show up at the 3' end of reads.
+Typically a program is run to remove commonly used adapter sequences from the 3' end of reads.
+We have installed onto the server an adapter removal program celeverly called scythe
+(https://github.com/vsbuffalo/scythe). scythe needs to be given a fasta file containing the adapters used in
+the construction of the sequencing library.
+According to the paper that our dataset came from
+(https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-10-641), they used the "Illumina
+Genomic DNA Sample Prep kit". The paper is ten years old so it took some digging to figure out what the
+adapters are for this kit that is not sold anymore. This document on Illumina's website had the adapter
+sequences: https://support.illumina.com/content/dam/illumina-support/documents/documentation/
+chemistry_documentation/experiment-design/illumina-adapter-sequences-1000000002694-10.pdf. We
+created a fasta file containing the two sequences. Let's look at them.
+In [ ]:
+
+%%bash
+cat adapters.fa
+Let's look at the usage for scythe.
+In [ ]:
+
+%%bash
+
+scythe --help
+We have written a bash script called scythe_dir.sh. Let's have a look at it.
+In [ ]:
+
+%%bash
+cat scythe_dir.sh
+Let's run the script to see what it does.
+In [ ]:
+
+%%bash
+bash scythe_dir.sh
+Why did the script print out the usage statement? How did it know that no arguments were passed to it?
+The script needs an output directory. How does the script combine the output directory that gets passed to
+it with the fastq file names to generate a path to the output file?
+scythe is going to create new fastq files that are adapter trimmed and we want to distinguish these from
+the raw fastq files. A nice way to do this is to output them to their own directory. Do you remember how to
+create a new directory? Make a new directory for the adapter trimmed fastq files.
+In [ ]:
+
+%%bash
+# code to make a new directory goes here
+Run the scythe_dir.sh script either in the notebook or in the terminal.
+In [ ]:
+
+%%bash
+# code to run the script goes here (can run here or in the terminal)
+Did scythe find any adapter sequences in the raw fastq files? What were the contamination rates? Were
+they consistent across samples?
+
+5. Low quality trimming and filtering
+As we learned above, low quality base calls are more likely at the 3' end of reads and some reads can
+generally have low quality. Depending on the goals of your sequencing experiment and how you plan to
+analyze your reads, errors in base calls may or may not be a big deal. Errors often mean you can't align a
+
+read to the reference genome and would end up tossing out reads with errors. Typically we'd like to save
+reads that just have low quality base calls at the ends so that we can use the information in the high
+quality part of the read. However, if the high quality part of the read is small or non-existant then we want
+to remove the read from our dataset because it won't be useful for us anyway.
+Programs like sickle (https://github.com/najoshi/sickle) perform the task of trimming off low quality bases
+from the ends and filtering out reads. It works by scanning over each read using a window length of ~10%
+of the read length, starts the window at the 5' end and moves it one base at a time across the read to the
+3' end, and at each position calculates the average quality in the window. When the average quality goes
+above a threshold (default is 20) then bases start getting added to the output read. When the average
+quality drops below the threshold then the program stops adding bases to the output read. If the output
+read has a length greater than or equal to a theshold (default is 20bp) then it is returned, otherwise the
+read is filtered out and nothing is returned for this read.
+Let's look at the arguments sickle takes.
+In [ ]:
+
+%%bash
+# the se is for single end reads. it can also be run with pe for paired end reads.
+sickle se --help
+There are lots of options. We will run it with the default arguments but it is not unusual to change these
+settings. Counterintuitively, we will use 'sanger' quality type because that is the type of quality scoring
+that Illumina has used for a long time.
+Now we need a script to run sickle. Let's write one. You could either copy and edit (in nano) the
+scythe_dir.sh script or you could go straight to writing the script in nano. It will need to take your
+adapter trimmed fastq directory as an input argument. You will also need to make a new directory to
+output the trimmed fastq files and you'll want your script to take this output directory as an argument as
+well. Remember that nano needs to be run from the terminal.
+Even if you don't run your script from the notebook, for record keeping, you might find it helpful to enter
+the command you run here.
+In [ ]:
+
+%%bash
+# code you used to run your script here
+Did sickle filter out a lot of reads? Was the proportion of filtered reads similar across samples?
+
+6. Processed read quality
+Now we want to rerun fastqc but this time on our processed reads. We can change our current working
+directory to be the directory containing the quality trimmed fastq files and then rerun the fastqc_dir.sh
+
+script to generate fastqc reports for each processed fastq file. When you have the fastqc files, compare
+them to the fastqc files for the raw fastq files. What has changed? Are there still any concerns? Do you
+need to redo any of the read processing?
+In [ ]:
+
+%%bash
+# code you used to run your script here
+
+7. There's more...
+In this exercise, we were using the processing programs scythe/sickle but there are many other tools that
+have been developed to do these tasks. Below are some citations to review papers on read processing.
+•
+
+Del Fabbro C, Scalabrin S, Morgante M, Giorgi FM (2013) An Extensive Evaluation of Read Trimming
+Effects on Illumina NGS Data Analysis. PLoS ONE 8(12): e85024.
+https://doi.org/10.1371/journal.pone.0085024
+
+•
+
+Chen C, Khaleel SS, Huang H, Wu CH (2014) Software for pre-processing Illumina next-generation
+sequencing short read sequences. Source Code Biol Med 9:8. https://doi.org/10.1186/1751-0473-9-8
+
+In [ ]:
+
+

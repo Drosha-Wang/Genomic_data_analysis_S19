@@ -1,0 +1,527 @@
+Gene Network Analysis with WGCNA
+¶
+Tutorial Outline¶
+1. Introduction
+1. Network analysis in biology
+2. The history of graph theory
+3. Graph theory: graph types and edge properties
+4. Graph theory: adjacency matrices
+5. Graph theory: network topology
+6. Types of biological networks
+2. Gene co-expression network analysis
+1. Preparing data
+2. Scale-free topology
+3. Adjacency and topological overlap matrices
+4. Module identification
+5. Relating modules to external data
+
+1. Introduction
+A. Network analysis in biology
+Biological systems are often represented as networks which are complex sets of binary interactions or
+relations between different entities. Essentially, every biological entity has interactions with other
+biological entities, from the molecular to the ecosystem level, providing us with the opportunity to model
+biology using many different types of networks such as ecological, neurological, metabolic or molecular
+interaction networks (Figure 1).
+The data explosion that originated in the -omics era of biological research necessitated the development of
+more systemic approaches to data analysis and a move away from the single gene/protein perspective.
+Systems biology aims to understand biological entities at the systemic level, analysing them not only as
+individual components, but also as interacting systems and their emergent properties. Related to this is
+
+network biology which allows the representation and analysis of biological systems using tools derived
+from graph theory.
+
+Biological network analysis historically originated from the tools and concepts of social network analysis
+and the application of graph theory to the social sciences.
+Wikipedia defines graph theory as:
+
+“[…] the study of graphs, mathematical structures used to model pairwise relations
+between objects. A graph in this context is made up of vertices, nodes, or points which are
+connected by edges, arcs, or lines”.
+In practical terms, it is the set of abstract concepts and methods that can be used to visualise and analyse
+networks.
+
+B. The history of graph theory
+Graph theory and the idea of topology was first described by the Swiss mathematician Leonard Euler as
+applied to the problem of the seven bridges of Königsberg. Königsberg consisted of four islands connected
+by seven bridges (Figure 2). No one had ever found a path that visited all four islands and crossed each of
+the seven bridges only once. Naturally, people assumed that no such path existed, but there was no
+mathematical proof of this.
+
+Euler showed that, to solve the problem, only the relations between the land masses are relevant, not the
+shape or actual distances on the map. These relationships can be represented in the form of a graph
+where the land masses are the nodes and the bridges are the edges of the graph. Euler used this graph
+and its topological features to prove that the path did not exist.
+Euler’s formulation of this problem provided the basis of a whole area of mathematics and it is the
+foundation of all the tools and concepts we will explore in this course.
+You can read more about Euler’s solution to this problem on Wikipedia.
+
+C. Graph theory: graph types and edge
+properties
+Networks can represent many different types of data. The nodes represent different entities (e.g. proteins
+or genes in biological networks), and edges convey information about the links between the nodes. First
+we will concentrate on the edges. Depending on the nature of underlying edge information, different types
+of analysis can be performed. For this reason, it is useful to highlight the main types of edges that can be
+found in a network (Figure 3).
+
+Types of network edges:¶
+Undirected edges
+
+This type of edge is found in protein-protein interaction networks (PPINs). The
+relationship between the nodes is a simple connection, without a given ‘flow’ implied,
+since the evidence behind the relationship only tells us that A binds B.
+Directed edges
+
+This is the kind of connection found, for example, in metabolic or gene regulation
+networks. There is a clear flow of signal implied and the network can be organised
+hierarchically.
+Weighted edges
+
+Directed or undirected edges can also have weight or a quantitative value associated
+with them. This is used to depict concepts such a reliability of an interaction, the
+quantitative expression change that a gene induces over another or even how closely
+related two genes are in terms of sequence similarity. Edges can also be weighted by
+their centrality values or several other topological parameters.
+
+D. Graph theory: adjacency matrices
+Every network can be expressed mathematically in the form of an adjacency matrix (Figure 4). In these
+matrices the rows and columns are assigned to the nodes in the network and the presence of an edge is
+symbolised by a numerical value. By using the matrix representation of the network we can calculate
+network properties such as degree, and other centralities by applying basic concepts from linear algebra
+(see later in the exercise).
+
+A network with undirected, unweighted edges will be represented by a symmetric matrix containing only
+the values 1 and 0 to represent the presence and absence of connections, respectively.
+Directed and weighted networks can make use of different numerical values in the matrix to express these
+more complex relationships. The sign of the values, for example, is sometimes used to indicate stimulation
+or inhibition.
+
+E. Graph theory: network topology
+Graphs have some properties that are very useful when unravelling the information that they contain. It is
+important to realise that the purpose of any type of network analysis is to work with the complexity of the
+network to extract meaningful information that you would not have if the individual components were
+examined separately.
+Network properties, and particularly topological properties, can help us identify relevant sub-structures
+within a network.
+Topology is the way in which the nodes and edges are arranged within a network. Topological properties
+can apply to the network as a whole or to individual nodes and edges. Some of the most used topological
+properties and concepts are described below.
+
+Degree of a network¶
+The degree is the number of edges that connect to a node. It is a fundamental parameter that influences
+other characteristics, such as the centrality of a node. The degree distribution of all nodes in the network
+helps define whether a network is scale-free or not, as we will see later. In the figure, the degree of each
+node is indicated and reflected in its size and colour. Directed network nodes have two values for degree:
+out-degree for those edges coming out of the node and in-degree for those edges coming into the node.
+
+Shortest paths¶
+Shortest paths, or the shortest distance between any two nodes, is used to model how information flows.
+This is especially relevant in many biological networks. In the figure, the shortest path between nodes A
+and B is highlighted and takes five steps.
+
+Scale-free networks¶
+In scale-free networks most of the nodes are connected to a low number of neighbours and there are a
+small number of high-degree nodes (hubs) that provide high connectivity to the network. In the figure,
+hubs are highlighted in orange.
+
+Transitivity¶
+Transitivity relates to the presence of tightly interconnected nodes in the network called clusters or
+communities. These are groups of nodes that are more internally connected than they are with the rest of
+the network. These groups are also called topological clusters and are highlighted in the figure.
+
+Centralities¶
+As we will see later, there are different flavours of centrality, each representing different concepts.
+Centrality can be measured for nodes and for edges and gives an estimation on how important that
+node/edge is for the connectivity or the information flow of the network. The degree of a node has a direct
+influence on many centrality measures, most prominently on the ‘degree centrality’. Its significance is
+reduced in more sophisticated types of centrality measures, for example, betweenness centrality. In the
+figure, the most central nodes (according to their betweenness centrality) are highlighted in warm colours
+and the node size reflects its degree.
+
+F. Types of biological networks
+Biological networks¶
+Different types of information can be represented in the shape of networks in order to model the cell. The
+meaning of the nodes and edges used in a network representation depends on the type of data used to
+build the network and this should be taken into account when analysing it. Different types of data will also
+produce different general network characteristics in terms of connectivity, complexity and structure, where
+edges and nodes potentially convey multiple layers of information.
+Some of the most common types of biological networks are:
+
+Protein-protein interaction networks¶
+•
+
+Represent the physical relationships between proteins. They are central to practically every process
+that takes place in the cell.
+
+•
+
+Proteins are represented as nodes that are linked by undirected edges.
+
+Metabolic networks¶
+•
+
+Represent the biochemical reactions that allow an organism to grow, reproduce, respond to the
+environment and maintain its structure.
+
+•
+
+Metabolites and enzymes take the role of nodes and the reactions describing their transformations
+are represented as directed edges.
+
+•
+
+Edges can represent the direction of the metabolic flow or regulatory effects of a specific reaction.
+
+Cell signaling networks¶
+•
+
+Signaling pathways represent the ordered sequences of events and model the information flow
+within the cell.
+
+•
+
+Gene regulation networks can be considered as a sub-type of cell signaling networks, focusing on a
+specific signalling event which is often the final stage of a signalling cascade.
+
+•
+
+Elements in the pathway (e.g. proteins, nucleic acids, metabolites) are represented as nodes and
+the flow of information is represented by directed edges.
+
+Gene / transcriptional regulatory networks¶
+•
+
+Represent how gene expression is controlled.
+
+•
+
+Genes and transcription factors are represented as nodes, while the relationship between them is
+depicted by different types of directional edges.
+
+•
+
+Regulatory RNAs and other mechanisms can also form part of this type of network.
+
+•
+
+Usually generated via databases representing consensus knowledge of gene regulation (e.g.
+Reactome or KEGG), although large-scale experimental datasets are increasingly available.
+
+Gene co-expression network¶
+•
+
+Represents an undirected graph, where each node corresponds to a gene, and a pair of nodes is
+connected with an edge if there is a significant co-expression relationship between them.
+
+•
+
+These networks are of biological interest since co-expressed genes are controlled by the same
+transcriptional regulatory program, functionally related, or members of the same pathway or
+protein complex.
+
+•
+
+We will look at gene co-expression network in more detail throughout the rest of the exercise.
+
+2. Gene co-expression network
+analysis
+A. Preparing data
+The required packages have already been install but if you want them on your local computer, you need
+following packages: WGCNA requires the following packages to be installed, one of them is only available
+through bioconductor.
+
+install.packages(c("dynamicTreeCut", "cluster", "flashClust", "Hmisc", "reshape",
+"foreach", "doParallel") );
+source("http://bioconductor.org/biocLite.R");
+
+biocLite("impute");
+install.packages("WGCNA");
+In [ ]:
+
+%%R
+require(WGCNA); require(fastOC);require(flashClust)
+options(stringsAsFactors = FALSE);
+# Allow up to 4 processes
+enableWGCNAThreads(4);
+In [ ]:
+
+%%R
+# Load the count data from the liver transcriptome
+count_data<-multMergeHTseq("/home/WWU/BIOL497R/data/RNAseq/counts/",
+pattern="*\\.counts", byY="gene",
+RegEx="(\\w+)\\.counts", Replace="\\1", sep="\t")
+# Load the protein annotations and get the gene lengths
+annotat<-read.csv("L_crocea_1.0_feature_table.txt",sep="\t",header=F)
+# Remove duplicated gene names and format for merge
+annotat<-annotat[!duplicated(annotat[,16]),]
+annotat[,16] <- paste0("GeneID:", annotat[,16])
+# Merge the gene counts with the correct annotation information
+# Note this will remove rows that were not a gene (ie ambigious or no feature)
+count_annotat<-merge(count_data,annotat, by.x="gene", by.y="V16")
+# Calculate the gene lengths
+gene_length<-count_annotat$V9-count_annotat$V8
+# Convert to transcripts per million reads (TPM)
+rpk<-count_annotat[,c(2:9),] / gene_length
+scale.factor<-colSums(rpk)/1e6
+tpm.mat<-rpk/scale.factor
+row.names(tpm.mat)<-count_annotat[,1]
+# Rotate (transpose) matrix for subsequent steps
+tpm.mat<-t(tpm.mat)
+
+In [ ]:
+
+%%R
+# Remove genes that have zero expression across all libraries
+gsg<-goodSamplesGenes(tpm.mat, verbose=3)
+gsg$allOK
+# If false remove all bad genes
+if (!gsg$allOK)
+{
+# Optionally, print the gene and sample names that were removed:
+if (sum(!gsg$goodGenes)>0)
+printFlush(paste("Removing genes:", paste(dimnames(tpm.mat)[[2]][!gsg$goodGenes],
+collapse = ", ")));
+if (sum(!gsg$goodSamples)>0)
+printFlush(paste("Removing samples:", paste(row.names(tpm.mat)[!gsg$goodSamples],
+collapse = ", ")));
+# Remove the offending genes and samples from the data:
+tpm.mat = tpm.mat[gsg$goodSamples, gsg$goodGenes]
+}
+
+B. Scale-free topology
+Choosing the soft-thresholding power:¶
+Constructing a weighted gene network entails the choice of the soft thresholding power β to which coexpression similarity is raised to calculate adjacency. Several authors (link) have proposed to choose the
+soft thresholding power based on the criterion of approximate scale-free topology. We refer you to that
+work for more details; here we illustrate the use of the function pickSoftThreshold() that performs the
+analysis of network topology and aids the user in choosing a proper soft-thresholding power. The user
+chooses a set of candidate powers (the function provides suitable default values), and the function returns
+a set of network indices that should be inspected, for example as follows:
+In [ ]:
+
+%%R
+# Choose a set of soft-thresholding powers
+powers = c(c(1:10), seq(from = 12, to=40, by=4))
+# Call the network topology analysis function
+sft = pickSoftThreshold(tpm.mat, powerVector = powers, verbose = 5)
+In [ ]:
+
+%%R
+# Plot the results
+# Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed
+R^2",type="n",
+main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,cex=0.9,col="red");
+# This line corresponds to using an R^2 cut-off of h
+abline(h=0.90,col="red")
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], sft$fitIndices[,5],
+xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+main = paste("Mean connectivity"))
+text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=0.91,col="red")
+Using the results from the above figures, we choose the power 20. A soft threshold of 20 is the lowest
+power for which the scale-free topology fit index approaches and assemtotes near 0.90. In addition, the
+mean connectivity decreases because random connections are being reduced to a near zero weight and
+what remains are the very robust connections between genes.
+
+C. Adjacency and topological overlap
+matrices
+We now calculate the adjacency ($a_{ij}$) and topological overlap matrix (TOM), using the soft
+thresholding power 20. The adjaceny matrix is relatively straight forward to generate and represents the
+Pearson's correlation coefficient between pairs of genes. This results in a symetrical matrix.
+$a_{i,j}$ = cor($x_{i}$,$x_{j}$)
+The topological overlap of two nodes reflects their relative inter-connectedness and provides a similarity
+measure (opposite of dissimilarity) that has been found useful in biological networks. Briefly, TOM
+combines the adjacency of two genes (correlation of expression) and the connection strengths these two
+genes share with other "third party" genes. More about the TOM measurement can be found here.
+Note this step takes about 10 min to complete.
+In [ ]:
+
+%%R
+softPower = 20;
+
+adjacency = adjacency(tpm.mat, power = softPower);
+# Turn adjacency into topological overlap
+dissTOM = 1-TOMsimilarity(adjacency)
+# Remove large objects and clear environment
+rm(adjacency)
+collectGarbage()
+
+Clustering using TOM¶
+We now use hierarchical clustering to produce a hierarchical clustering tree (dendrogram) of genes. Note
+that we use the function flashClust() that provides a much faster hierarchical clustering routine than the
+standard hclust() function. In the clustering tree (dendrogram), each leaf, that is a short vertical line,
+corresponds to a gene. Branches of the dendrogram group together densely interconnected, highly coexpressed genes.
+In [ ]:
+
+%%R
+# Call the hierarchical clustering function
+geneTree = flashClust(as.dist(dissTOM), method = "average");
+# Plot the resulting clustering tree (dendrogram)
+plot(geneTree, xlab="", sub="", main = "Gene clustering on TOM-based dissimilarity",
+labels = FALSE, hang = 0.04);
+
+D. Module identification
+Module identification amounts to the identification of individual branches (”cutting the branches off the
+dendrogram”) and represent sub-networks (i.e. molecular pathways) that are occuring in the larger
+network. There are several methods for branch cutting and our standard method is the Dynamic Tree Cut
+from the package dynamicTreeCut. In general, module identification is an art and comes down whether
+you are a lumper or splitter. There have been a few statiistical approaches (but see) to validate the module
+assignments and they are very length permutation style tests that require you to have greater than 20
+RNAseq libraries. Briefly, these tests sub-sample the libraries and determine how well gene-module
+relationships are preserved. If modules are to small, the gene-module relationships are likely to be unstable but if the modules are to large then you might be lumping multiple pathways together.
+In [ ]:
+
+%%R
+# I like large modules, so we set the minimum module size relatively high:
+minModuleSize = 300;
+
+# Module identification using dynamic tree cut:
+dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM,
+deepSplit = 2, pamRespectsDendro = FALSE,
+minClusterSize = minModuleSize);
+table(dynamicMods)
+The function returned 21 modules labeled 1–21 largest to smallest. Label 0 (grey) is reserved for
+unassigned genes. The above command lists the number of genes assigned to each of the modules.
+In [ ]:
+
+%%R
+# Convert numeric lables into colors
+dynamicColors = labels2colors(dynamicMods)
+print(table(dynamicColors))
+# Plot the dendrogram and colors underneath
+plotDendroAndColors(geneTree, dynamicColors, "Dynamic Tree Cut",
+dendroLabels = FALSE, hang = 0.03,
+addGuide = TRUE, guideHang = 0.05,
+main = "Gene dendrogram and module colors")
+The Dynamic Tree Cut may identify modules that have expression profiles which are very similar and it
+may be good to merge such modules since their genes are highly co-expressed. To quantify co-expression
+similarity of entire modules, we calculate their eigengenes and cluster them on their correlation.
+In [ ]:
+
+%%R
+# Calculate eigengenes
+MEList = moduleEigengenes(tpm.mat, colors = dynamicColors)
+MEs = MEList$eigengenes
+# Calculate dissimilarity of module eigengenes
+MEDiss = 1-cor(MEs);
+# Cluster module eigengenes
+METree = hclust(as.dist(MEDiss), method = "average");
+# Plot the result
+plot(METree, main = "Clustering of module eigengenes",
+xlab = "", sub = "")
+
+# Choose a height cut of 0.20, corresponding to correlation of 0.80
+MEDissThres = 0.20
+# Plot the cut line into the dendrogram
+abline(h=MEDissThres, col = "red")
+In [ ]:
+
+%%R
+# Call an automatic merging function
+merge = mergeCloseModules(tpm.mat, dynamicColors, cutHeight = MEDissThres, verbose = 3)
+# The merged module colors
+mergedColors = merge$colors;
+# Eigengenes of the new merged modules:
+mergedMEs = merge$newMEs;
+To see what the merging did to our module colors, we plot the gene dendrogram again, with the original
+(Dynamic Tree Cut) and merged module colors underneath.
+In [ ]:
+
+%%R
+#pdf(file = "geneDendro-3.pdf", wi = 9, he = 6)
+plotDendroAndColors(geneTree, cbind(dynamicColors, mergedColors),
+c("Dynamic Tree Cut", "Merged dynamic"),
+dendroLabels = FALSE, hang = 0.03,
+addGuide = TRUE, guideHang = 0.05)
+#dev.off()
+In the subsequent analysis, we will use the merged module colors in mergedColors. In addition, we might
+want to save the results because it took a fair amount of time to get to this point.
+In [ ]:
+
+%%R
+# Rename to moduleColors
+moduleColors = mergedColors
+# Construct numerical labels corresponding to the colors
+colorOrder = c("grey", standardColors(50));
+moduleLabels = match(moduleColors, colorOrder)-1;
+MEs = mergedMEs;
+
+# Save module colors and labels for use in subsequent parts
+#save(MEs, moduleLabels, moduleColors, geneTree, file = "FishLivernetworkConstruction.RData")
+# Save gene - module assignments
+gene_modules<-cbind(colnames(tpm.mat), moduleColors)
+write.table(gene_modules, file="FishLiver_modules.txt", sep="\t")
+
+E. Relating modules to external data
+The last step we want to do with the co-expression analysis is to determine if the modules are associated
+with the experimental conditions. To do this, we will summarize each module by its eigengene (first
+principal component). Since modules contain multiple genes (100-1000s) it is difficult to obtain an
+estimate that describes the expression of the group. Conceptually you might think of this as the average
+expression but in actuality averages are not a great way to describe multidimensional data that deviates
+from a normal distribution. More information about principle components and eigenvectors can be found
+here.
+In [ ]:
+
+%%R
+# Relating modules to experimental factors
+metadata<-read.table("RNAseq_metadata.txt",sep="\t",header=T)
+row.names(metadata)<-metadata[,1]
+# Get the condition info and sort based on library names
+conditions<-metadata[row.names(tpm.mat),"condition"]
+conditions_ME<-cbind(conditions,MEs)
+head(conditions_ME)
+Now that we have the eigengene expression for each module, we want to visualize how modules are
+related to each other. To do this, we calculate a dissimilarity measure between the module eigengenes
+using the Pearson's correlation and cluster the modules.
+In [ ]:
+
+%%R
+require(plyr); require(ggplot2); require(gridExtra); require(ggdendro)
+# Calculate distance and cluster
+dissimME=(1-t(cor(MEs, method="pearson")))/2
+
+hclustdatME=hclust(as.dist(dissimME), method="average" )
+# Plot the eigengene dendrogram
+plot(hclustdatME, main="Clustering tree based of the module eigengenes")
+# Plot a simple dendrogram with ggdendro package
+plot1 <- ggdendrogram(hclustdatME, rotate = T, labels=F)+
+theme(axis.text.y=element_blank())
+plot1
+Next, we need to loop through the data to summarize the eigengenes for each module using the mean and
+standard error. The results will be put into a plot that contains the summary information by condition and
+module. In addition, the module order is sorted based on correlation of eigengen expression and hopefully
+correlated modules have similar associations with conditions.
+In [ ]:
+
+%%R
+# Create an empty variable that we can use to store the summary statitics
+summarize_ME<-NULL
+for(j in 2:ncol(conditions_ME))
+{
+# Summarize each eigengene (EG) based on condition
+EG<-conditions_ME[,c(1,j)]
+names(EG)[2]<-"EG"
+tmp.avg<-ddply(EG, .(conditions), summarise, tmp.avg=mean(EG),
+tmp.se=sd(EG)/sqrt(length(EG)))
+# Append the results to the bottom of the table
+summarize_ME<-rbind(summarize_ME,cbind(names(conditions_ME)[j],tmp.avg))
+}
+# Assign useful name to column
+names(summarize_ME)[1]<-"module"
+# Sort modules based on similarity of expression
+ME_order<-hclustdatME$labels[rev(hclustdatME$order)]
+summarize_ME$module<-factor(summarize_ME$module, levels=ME_order)
+# Plot the mean and standard error for each ME using ggplot and facet_grid
+plot2<-ggplot(summarize_ME,aes(x=conditions,y=tmp.avg, group=1)) + geom_line() +
+geom_errorbar(aes(ymax=tmp.avg+tmp.se, ymin=tmp.avg-tmp.se), width=0.25,size=0.5) +
+ylab("Module expression (eigengene)") +xlab("Condition") +
+facet_grid(module ~ .) +
+
+theme(strip.text.y=element_text(angle=0))
+# Arrange plots in grid
+grid.arrange(plot2,plot1, nrow=1)
+In [ ]:
+
+

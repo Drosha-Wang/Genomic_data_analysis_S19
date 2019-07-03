@@ -1,0 +1,284 @@
+Genome Assembly Tutorial
+¶
+Tutorial Outline¶
+1. Data accessibility
+2. Set up environment
+3. Quality control on raw reads
+4. ABySS: de novo sequence assembler
+5. SPAdes: de Bruijn graph based assembler
+6. QUAST: assembly statistics
+7. SSPACE Standard
+8. AlignGraph on close relation
+
+1. Data accessibility
+This tutorial will serve as an example of how to use free and open-source genome assembly and secondary
+scaffolding tools to generate high quality assemblies of bacterial sequence data. The bacterial sample
+used in this tutorial will be referred to simply as “Species” but comes from the NCBI SRA run SRR5714000.
+This data is paired-end data, meaning that there are forward and reverse reads, which we will designate as
+SRR5714000_1.fastq and SRR5714000_2.fastq, respectively.
+The data sets are available on the server:
+
+Path: /home/WWU/BIOL497R/data/assembly
+Data sets: SRR5714000_1.fastq.gz
+
+SRR5714000_2.fastq.gz
+
+2. Set up environment
+In this exercise, we will be using multiple software programs, below is a list and links to more information.
+•
+
+Sickle
+
+•
+
+ABySS
+
+•
+
+SPAdes
+
+•
+
+QUAST
+
+•
+
+SSPACE
+
+•
+
+AlignGraph
+
+3. Quality control on raw reads
+The first step is to perform quality control on the reads using sickle. To run the program we will use the
+sickle command. Since our reads are paired-end reads, we indicate this with the pe option. The -f flag
+designates the input file containing the forward reads, -r the input file containing the reverse reads, -o
+the output file containing the trimmed forward reads, -p the output file containing the trimmed reverse
+reads, and -s the output file containing trimmed singles. The -q flag designates the minimum quality, -l
+the minimum read length, and -t designates the type of read.
+In [ ]:
+
+%%bash
+DATA="/home/WWU/BIOL497R/data/assembly"
+sickle pe -f $DATA/SRR5714000_1.fastq.gz -r $DATA/SRR5714000_2.fastq.gz -t sanger \
+-o SRR5714000_sickle_1.fastq -p SRR5714000_sickle_2.fastq -s
+SRR5714000_sickle_s.fastq \
+-q 30 -l 45
+The trimmed output from sickle will now be located in your folder ~/BIOL497R/notebooks/Ex5_assembly/
+
+4. ABySS: de novo sequence
+assembler
+ABySS is the first assembly program we will use to assemble the trimmed reads. Since our reads are
+paired-end reads, to run the assembler we will use the abyss-pe command. We will use the parameters k
+for the size of the kmer, name for the output file prefix, in for the paths to the forward/reverse trimmed
+reads, and se for the path to the singles file, np for number of processors.
+In [ ]:
+
+%%bash
+#ABySS must be run in its own cell
+abyss-pe np=4 k=31 name=Species_Kmer31 in='SRR5714000_sickle_1.fastq
+SRR5714000_sickle_2.fastq' se='SRR5714000_sickle_s.fastq'
+In [ ]:
+
+%%bash
+#move your results to a new folder
+
+mkdir species-kmer31
+mv Species_Kmer31* species-kmer31
+The assembly output files should now be located in ~/BIOL497R/notebooks/Ex5_assembly/specieskmer31 and the results table in html format is easy to view Species_Kmer31-stats.html.
+Unfortunately, many genome assembly protocols require a lot of manual optimization and this optimization
+involves generating assemblies at different k-mer length. Repeat the analysis using k=35 and k=41.
+In [ ]:
+
+%%bash
+
+5. SPAdes: de Bruijn graph based
+assembler
+The second assembler we will run is SPAdes. SPAdes is different from the ABySS assembler in that it
+generates a final assembly from multiple kmers. A list of kmers is automatically selected by SPAdes using
+the maximum read length of the input data, and each individual kmer contributes to the final assembly. To
+run SPAdes we will use the spades.py command with the --careful option to minimize the number of
+mismatches in the contigs, -o for the output folder, -1 for the path to the forward reads, -2 for the path to
+the reverse reads, and -s for the path to the singles reads. If desired, a list of kmers can be specified with
+the -k flag which will override automatic kmer selection and the number of threads can be specified with
+the -t option. Please done use more than 4 threads.
+In [ ]:
+
+%%bash
+#view spades options
+spades.py --help
+In [ ]:
+
+%%bash
+spades.py --careful -o SPAdes_out -1 SRR5714000_sickle_1.fastq -2
+SRR5714000_sickle_2.fastq -s SRR5714000_sickle_s.fastq
+The SPAdes assembly output files will be located in ~/BIOL497R/notebooks/Ex5_assembly/SPAdes_out
+
+6. QUAST: assembly statistics
+Now that we have several assemblies, it’s time to analyze the quality of each assembly. ABySS has their
+own statistics output, but for consistency, we will be using the program QUAST. The statistics we are most
+
+interested in are number of contigs, total length, and N50. A good assembly would have a low number of
+contigs, a total length that makes sense for the species, and a high N50 value. To run quast on all of our
+final assembly files we will run the following commands, with the only parameters used being the name of
+the assembly file(s) and output directory.
+In [ ]:
+
+%%bash
+# ABySS statistics on all k-mers (kmer* where "*" is a wildcard)
+quast.py species-kmer*/Species_Kmer*-scaffolds.fa -o ABySS
+# SPAdes statistics
+quast.py SPAdes_out/scaffolds.fasta -o SPAdes
+QUAST’s output consists of a folder (ABySS or SPAdes) containing results in multiple formats. Your results
+should look similar to the numbers below.
+
+ABySS results:¶
+Assembly
+
+# contigs Largest contig Total length GC (%)
+
+N50
+
+Sample_Kmer31-scaffolds 777
+
+402439
+
+5143454
+
+50.79
+
+192338
+
+Sample_Kmer35-scaffolds 643
+
+448304
+
+5152070
+
+50.79
+
+232788
+
+Sample_Kmer41-scaffolds 571
+
+448530
+
+5164001
+
+50.79
+
+232788
+
+SPAdes results:¶
+Assembly # contigs Largest contig Total length GC (%)
+scaffolds
+
+453
+
+543978
+
+5196866
+
+50.80
+
+N50
+183880
+
+From the data, it’s clear that SPAdes performed the best. SPAdes generated only 453 contigs as compared
+to 500-700 from ABySS. Additionally, the largest contig size in SPAdes was the highest but the N50 were
+comparable between the assembliers. Finally, the total number of base pairs was close to the number of
+base pairs (5,305,423) that we would expect from a jellyfish k-mer analysis. We have not done the k-mer
+analysis on these samples but you could using Exercise 4 methods.
+
+jellyfish count -t 3 -C -m 14 -s 5G -o 14mer_out --min-qual-char=?
+SRR5714000_sickle_1.fastq SRR5714000_sickle_2.fastq SRR5714000_sickle_s.fastq
+jellyfish histo -o 14mer_out.histo 14mer_out
+
+7. SSPACE Standard
+Next, we will do a secondary scaffolding with the SPAdes assemblyusing a program called SSPACE. SSPACE
+is a script able to extend and scaffold pre-assembled contigs. The location of files:
+
+SPAdes scaffold:
+~/BIOL497R/notebooks/Ex5_assembly/SPAdes_out/scaffolds.fasta
+SSPACE program:
+~/BIOL497R/notebooks/Ex5_assembly/SSPACE/SSPACE_Standard_v3.0.pl
+In addition, SSPACE requires a library file containing the paths to the paired end reads, average insert size,
+and type of data. This file is located at library.txt.
+We will run SSPACE_Standard_v3.0.pl using a perl command with the parameters -l for the species
+library, -s for the fasta file containing assembled scaffolds, -b for the output prefix, and -T for the number
+of threads.
+In [79]:
+
+%%bash
+cat library.txt
+SRR5714000 bowtie SRR5714000_sickle_1.fastq SRR5714000_sickle_2.fastq 300 0.25 FR
+In [ ]:
+
+%%bash
+perl SSPACE/SSPACE_Standard_v3.0.pl -l library.txt -s SPAdes_out/scaffolds.fasta -b
+SSPACE_out -T 1
+The output scaffold file is located at
+~/BIOL497R/notebooks/Ex5_assembly/SSPACE_out/SSPACE_out.final.scaffolds.fasta.
+We then will run QUAST on this file to compare it with previous assemblies.
+In [ ]:
+
+%%bash
+quast.py SSPACE_out/SSPACE_out.final.scaffolds.fasta -o SSPACE_out
+What we find is that running SSPACE on the SPAdes scaffolds improves the assembly by reducing the
+number of contigs from 453 to 349, increases the longest contig to 548907 and increases the N50 to
+233846.
+In [ ]:
+
+%%bash
+
+cat SSPACE_out/report.txt
+
+8. AlignGraph on close relation
+AlignGraph is the final step in this assembly pipeline. From the documentation, AlignGraph is a software
+that extends and joins contigs or scaffolds by reassembling them with help provided by a reference
+genome of a closely related organism. By using a reference genome of a closely related organism, it can
+improve the assembly.
+To run AlignGraph, we first need to convert the raw reads from fastq format to fasta format. There are
+many ways to do this, but one of the most efficient ways is to use a sed command to parse out the reads
+from the fastq file:
+In [ ]:
+
+%%bash
+sed -n '1~4s/^@/>/p;2~4p' SRR5714000_sickle_1.fastq > SRR5714000_sickle_1.fasta
+sed -n '1~4s/^@/>/p;2~4p' SRR5714000_sickle_2.fastq > SRR5714000_sickle_2.fasta
+Then we will run AlignGraph using the AlignGraph command and the parameters --read1 for the forward
+read in fasta format, --read2 for the reverse read in fasta format, --contig for the path to the assembly
+we are rescaffolding, and --genome for the path to the reference genome we are using for rescaffolding.
+The genome we are using is named Ecoli_genome.fa and was obtained from NCBI - Escherichia coli strain
+FDAARGOS_144.
+Additionally, we have to define the --distanceLow and --distanceHigh parameters. From the
+documentation, distanceLow is the maximum of [insert size – 1000, insert size] and distanceHigh [insert
+size + 1000]. The insert size of this dataset is 300, giving us a distanceLow of 300 and distanceHigh of
+1300. Finally, we define the output file names using --extendedContigs and --remainingContigs. –
+remainingContigs will contain the final assembly. Lastly, we need to specify the --fastMap option to use
+the NUCMER alignment algorithm and if this option is missing the program will fail because the correct
+version of BLAT is not installed on the server.
+In [ ]:
+
+%%bash
+AlignGraph --read1 SRR5714000_sickle_1.fasta --read2 SRR5714000_sickle_2.fasta \
+--contig SSPACE_out/SSPACE_out.final.scaffolds.fasta --genome
+Ecoli_genome.fa \
+--distanceLow 300 --distanceHigh 1300 --extendedContig
+Species_extendedContigs.fa \
+--remainingContig Species_remainingContigs.fa --fastMap \
+The output file is located at ~/BIOL497R/notebooks/Ex5_assembly/Species_remainingContigs.fa.
+
+Then QUAST:
+In [ ]:
+
+%%bash
+quast.py Species_remainingContigs.fa -o AlignGraph
+cat AlignGraph/report.txt
+Unfortunately, this dataset was not dramatically improved by AlignGraph with this specific genome, but
+the tutorial still illustrates the general idea that reference genome assemblies can be used to help scaffold
+de novo assemblies. It is important to note that improving a genome assembly becomes incrementally
+harder as you move closer to a complete or near complete genome assembly.
+In [ ]:
+
+

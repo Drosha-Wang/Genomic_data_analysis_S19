@@ -1,0 +1,460 @@
+Regular Expressions
+¶
+Tutorial Outline¶
+1. Getting ready
+2. Regular Expressions
+1. Escape sequences
+2. Quantifiers
+3. Position of pattern within the string
+4. Operators
+5. Character classes
+6. General modes for patterns
+3. Regular expressions in R
+1. General modes for patterns
+2. Examples using `grep()`
+3. Examples using `sub()` to format or find/replace data
+4. There's more...
+
+1. Getting ready
+Regular expressions (regex or regexp) are extremely useful in extracting information from any text by
+searching for one or more matches of a specific search pattern (i.e. a specific sequence of ASCII or unicode
+characters).
+Fields of application range from validation, parsing strings, translating data to other formats and web
+scraping.
+One of the most interesting features is that once you’ve learned the syntax, you can actually use this tool
+in (almost) all programming languages (C / C++, bash, Python, Perl, Ruby, R, and many others) and
+text editors (Notepad++, BBEdit, and jEdit) with the slightest distinctions about the support of the
+most advanced features and syntax versions supported by the engines).
+In todays exercise we will learn to use regular expressions using the bash program grep and in R using
+grep() and sub().
+Before we begin lets set up the notebook environment and make R accessable to the notebook.
+
+In [ ]:
+
+#set up notebook environment
+import rpy2.rinterface
+%load_ext rpy2.ipython
+
+2. Regular Expressions
+Regular expression is a pattern that describes a specific set of strings with a common structure. Regular
+expressions typically specify characters (or character classes) to seek out, possibly with information about
+repeats and location within the string. This is accomplished with the help of metacharacters that have
+specific meaning and we will use some small examples to introduce regular expression syntax.
+In [ ]:
+
+%%bash
+# look at the first lines of a file
+head basic.txt
+In [ ]:
+
+%%bash
+# grep searches for a string or pattern in a file or input text and returns any lines
+that have a match
+grep "few" basic.txt
+In [ ]:
+
+%%bash
+# return any line with a t character
+grep "t" basic.txt
+
+__A. Escape sequences__
+There are some special characters in computer languages that cannot be directly coded in a string. These
+characters require escaping. This rule applies to all string functions in R, including regular expressions. See
+here for a complete list of R esacpe sequences.
+https://stat.ethz.ch/R-manual/R-devel/library/base/html/Quotes.html
+•
+
+\': single quote. You don’t need to escape single quote inside a double-quoted string, so we can
+also use "'" in the previous example.
+
+•
+
+\": double quote. Similarly, double quotes can be used inside a single-quoted string, i.e. '"'.
+
+•
+
+\n: newline.
+
+•
+
+\r: carriage return.
+
+•
+
+\t: tab character.
+
+In [ ]:
+
+%%bash
+# return any line containing a double quote
+grep "\"" basic.txt
+
+__B. Quantifiers__
+Quantifiers specify how many repetitions of the pattern.
+•
+
+*: zero or more matches of the preceeding character or class
+
+•
+
+?: zero or one matches of the preceeding character or class
+
+•
+
++: one or more matches of the preceeding character or class
+
+•
+
+{n}: exactly n matches of the preceeding character or class
+
+•
+
+{min,}: min or more matches of the preceeding character or class
+
+•
+
+{min,max}: as few as min but no more than max matches of the preceeding character or class
+
+In [ ]:
+
+%%bash
+# we use the -E option to extend bash's grep to use more regular expression syntax
+# than by default return any line with one or more s characters in a row
+grep -E "s+" basic.txt
+In [ ]:
+
+%%bash
+# return any line with exactly 2 s characters in a row
+grep -E "s{2}" basic.txt
+
+__C. Position of pattern within the string__
+Anchors¶
+•
+
+^: matches the start of the string.
+
+•
+
+$: matches the end of the string.
+
+^The matches any string that starts with The
+end$ matches a string that ends with end
+^The end$ exact string match (starts and ends with The end)
+
+roar matches any string that has the text roar in it
+In [ ]:
+
+%%bash
+# return any line that starts with an i character
+grep "^i" basic.txt
+
+Boundries¶
+•
+
+\b...\b: matches the empty string at either edge of a word. Don’t confuse it with ^ $ which marks
+the edge of a string.
+
+•
+
+\B: matches the empty string provided it is not at an edge of a word.
+
+In [ ]:
+
+%%bash
+# return any line that has a word that starts with the characters re
+grep "\bre" basic.txt
+In [ ]:
+
+%%bash
+# return any line that has a word that ends with an s character
+grep "s\b" basic.txt
+In [ ]:
+
+%%bash
+# return any line that has a word that contains an internal s character
+grep "s\B" basic.txt
+
+__D. Operators__
+•
+
+.: matches any single character, as shown in the first example.
+
+•
+
+[...]: a character list, matches any one of the characters inside the square brackets. We can also
+use - inside the brackets to specify a range of characters.
+
+•
+
+[^...]: an inverted character list, similar to [...], but matches any characters except those inside the
+square brackets.
+
+•
+
+\: suppress the special meaning of metacharacters in regular expression, i.e. $ * + . ? [ ] ^ { }
+| ( ) \, similar to its usage in escape sequences. Since \ itself needs to be escaped in R, we need
+to escape these metacharacters with double backslash like \$.
+
+•
+
+|: an “or” operator, matches patterns on either side of the |.
+
+•
+
+(...): grouping in regular expressions. This allows you to retrieve the bits that matched various parts
+
+of your regular expression so you can alter them or use them for building up a new string. Each
+group can than be refer using \N, with N being the No. of (...) used. This is called backreference.
+In [ ]:
+
+%%bash
+# return any line that has an h or a t character followed by an i character
+grep -E "h|ti" basic.txt
+In [ ]:
+
+%%bash
+# return any line that has an i character followed by one or more other characters
+followed by an i character
+grep -E "i.+i" basic.txt
+
+__E. Character classes__
+Character classes allows to – surprise! – specify entire classes of characters, such as numbers, letters, etc.
+There are two flavors of character classes, POSIX uses [: and :] around a predefined name inside square
+brackets and Perl-like metacharacters other uses \ and a special character. They are sometimes
+interchangeable.
+•
+
+[[:digit:]] or \d: digits, 0 1 2 3 4 5 6 7 8 9, equivalent to [0-9].
+
+•
+
+\D: non-digits, equivalent to [^0-9].
+
+•
+
+[[:lower:]]: lower-case letters, equivalent to [a-z].
+
+•
+
+[[:upper:]]: upper-case letters, equivalent to [A-Z].
+
+•
+
+[[:alpha:]]: alphabetic characters, equivalent to [[:lower:][:upper:]] or [A-z].
+
+•
+
+[[:alnum:]]: alphanumeric characters, equivalent to [[:alpha:][:digit:]] or [A-z0-9].
+
+•
+
+\w: word characters, equivalent to [[:alnum:]] or [A-z0-9_].
+
+•
+
+\W: not word, equivalent to [^A-z0-9_].
+
+•
+
+[[:xdigit:][: hexadecimal digits (base 16), 0 1 2 3 4 5 6 7 8 9 A B C D E F a b c d e f, equivalent to [09A-Fa-f].
+
+•
+
+[[:blank:]]: blank characters, i.e. space and tab.
+
+•
+
+[[:space:]] or \s: space characters: tab, newline, vertical tab, form feed, carriage return, space.
+
+•
+
+\S: not space.
+
+•
+
+[[:punct:]]: punctuation characters, ! " # $ % & ’ ( ) * + , - . / : ; < = > ? @ [ ] ^ _ ` { | } ~.
+
+•
+
+[[:graph:]]: graphical (human readable) characters: equivalent to [[:alnum:][:punct:]].
+
+•
+
+[[:print:]]: printable characters, equivalent to [[:alnum:][:punct:]\s].
+
+•
+
+[[:cntrl:]]: control characters, like \n or \r, [\x00-\x1F\x7F].
+
+Note:
+•
+
+[:...:] has to be used inside square brackets, e.g. [[:digit:]].
+
+•
+
+\ itself is a special character that needs escape, e.g. \d. Do not confuse these regular expressions
+with R escape sequences such as \t.
+
+Note: In bash, grep -E primarily uses POSIX stype regular expressions and does not recognize Perl-like
+metacharactercs (i.e. \d, \n or \r) as valid search strings.
+In [ ]:
+
+%%bash
+# return any line that has an alphabetic character
+grep -E [[:alpha:]] basic.txt
+In [ ]:
+
+%%bash
+# return any line that has a digit character
+grep -E [[:digit:]] basic.txt
+
+3. Regular expressions in R
+__A. General modes for patterns__
+There are different syntax standards for regular expressions, and R offers two:
+•
+
+POSIX extended regular expressions (default)
+
+•
+
+Perl-like regular expressions.
+
+You can easily switch between by specifying perl = FALSE/TRUE in base R functions, such as grep() and
+sub(). For functions in the stringr package, wrap the pattern with perl(). The syntax between these two
+standards are a bit different sometimes and for this tutorial, we will only use R’s Perl-like regular
+expressions.To use the Perl-like regular expressions we need to add an addition escape character (\) for R
+to recognize the metacharacter.
+
+Example for alpha numeric search¶
+•
+
+POSIX grep("[[:alnum:]]", string)
+
+•
+
+Perl-like grep("\\w", string, perl=TRUE)
+
+There’s one last type of regular expression – “fixed”, meaning that the pattern should be taken literally.
+Specify this via fixed = TRUE (base R functions) or wrapping with fixed() (stringr functions). For example,
+"A.b" as a regular expression will match a string with “A” followed by any single character followed by “b”,
+but as a fixed pattern, it will only match a literal “A.b”.
+
+__B. Examples using `grep()`__
+In [ ]:
+
+%%R
+
+#Using grep, what indexes contain bog or Bog?
+string <- c("mog","Bog", "hog", "fog", "Log", "bog", "dog", "smog")
+#pattern: [bB]og
+grep("[bB]og",string,perl=TRUE)
+In [ ]:
+
+%%R
+#how many genes are on chromosome 8 in Populus?
+#read populus annotation file
+populus <- read.table("Ptrichocarpa_210_annotation_primary.txt", sep="\t", header=TRUE)
+#pattern: Potri.008G
+indexes <- grep("Potri.008G", populus$gene)
+length(indexes)
+In [ ]:
+
+%%R
+#Which genes have a description that contains the term F-box
+Fbox <- grep("F-box", populus$description, perl=T)
+head(populus[Fbox,c("gene", "description")])
+In [ ]:
+
+%%R
+#What genes were annotated as gibberellin?
+#Note the [Gg] specifies a custom search that allows for a match of either upper or
+lower case g
+#pattern: [Gg]ibberellin
+GA <- grep("[Gg]ibberellin", populus$description)
+length(GA)
+head(populus[GA,c("gene", "description")])
+
+__C. Examples using `sub()` to format or find/
+replace data__
+sub() function replaces the first match of a string, if the parameter is a string vector, replaces the first
+match of all elements. Information is captured using parentheses (...) and replaced using \1 etc. The order
+of assignment for multiple captures is left to right and works from the inside out.
+
+sub(pattern, replacement, x, ignore.case = FALSE, perl = FALSE,
+fixed = FALSE, useBytes = FALSE)
+•
+
+pattern: regular expression, or string for fixed=TRUE
+
+•
+
+x: string, the character vector
+
+•
+
+replacement: string, character vector for replacement
+
+•
+
+ignore.case: case sensitive or not
+
+•
+
+perl: logical. Should perl-compatible regexps be used? Has priority over extended
+
+•
+
+fixed: logical. If TRUE, pattern is a string to be matched as is. Overrides all conflicting arguments
+
+•
+
+useBytes: logical. If TRUE the matching is done byte-by-byte rather than character-by-character
+
+In [ ]:
+
+%%R
+#Convert mm/dd/yyyy to dd_mm_yyyy using sub
+dates <- c("01/19/2016", "12/03/2012", "08/28/1993")
+#pattern: (\\d+)\\/(\\d+)\\/(\\d+)
+#replacement: \\2_\\1_\\3
+new_date_format <- sub("(\\d+)\\/(\\d+)\\/(\\d+)", "\\2_\\1_\\3", dates, perl=TRUE)
+new_date_format
+In [ ]:
+
+%%R
+#Convert Species and genus
+#Example: Agalma elegans to A. elegans
+Scientific_names <- c("Liriodendron tulipifera", "Liquidambar styraciflua", "Eucalyptus
+grandis", "Populus trichocarpa", "Salix aegyptiaca", "Salix purpurea")
+#pattern: ^(\\w)\\w+(\\s\\w+)$
+#replacement: \\1.\\2
+sub("(\\w)\\w+", "\\1.", Scientific_names, perl=TRUE)
+
+In [ ]:
+
+%%R
+#Remove the transcript number from the ATG gene names in populus$ATG
+#Example AT5G17230.3 to AT5G17230
+sub("(\\w+)\\.\\d+", "\\1", populus$ATG, perl = TRUE)
+
+4. There's more...
+We only scratched the surface of regular expressions in this exercise. There are many other commands
+that can be combined in an infinite number of ways.
+Here are a few references:
+•
+
+RegEx for bioinformatics at
+http://library.open.oregonstate.edu/computationalbiology/chapter/patterns-regular-expressions/
+
+•
+
+R regular expressions at https://stat545.com/block022_regular-expression.html
+
+•
+
+R manual page at https://stat.ethz.ch/R-manual/R-devel/library/base/html/regex.html
+
+In [ ]:
+
+

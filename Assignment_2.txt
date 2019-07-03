@@ -1,0 +1,134 @@
+Assignment 2
+¶
+1. In the read processing exercise you wrote a bash script to run sickle on your adapter trimmed fastq
+files. For this first part of the assignment, share your script (you could do this with the cat
+command) and then write a brief description of what each line of the code is doing.
+In [7]:
+
+%%bash
+cat ../Ex3_read_processing/trimmed_sequences/sickle.sh
+# you could put your cat command here
+#!/bin/bash
+if [[ $# -eq 0 ]] ; then
+echo "usage: $0 output_directory"
+exit 0
+fi
+INDIR=$1
+OUTDIR=$2
+date
+for i in *.fastq
+do
+echo "working on $i"
+OUTFILE="$OUTDIR/$i"
+echo "generating $OUTFILE with sickle"
+date
+sickle se -f $i
+
+-t sanger -o $OUTFILE
+
+done
+date
+Put your line by line description here.
+
+!/bin/bash #shebang line, informs
+the notebook of the language¶
+if [[ $# -eq 0 ]] ; then echo "usage: $0 output_directory" exit 0
+
+above lines say that if no output
+directory is specified, inform the
+user and do not run the rest of the
+script¶
+fi #represents the end of the if/then function
+INDIR=$1 #the 'in' directory is argument 1
+OUTDIR=$2 #the 'out' directory is argument 2
+date #display the date
+for i in *.fastq #pertaining to any .fastq file in any directory containing i number of .fastq files
+do #perform the following
+
+echo "working on $i" #state to the user that the ith file is having an operation
+done unto it
+OUTFILE="$OUTDIR/$i" #defines the name of the outfile as circumstantial, with
+multiple outfiles being created and named after the .fastq files that exist in the
+'out' directory.
+echo "generating $OUTFILE with sickle" #tell the user that the outfile is being
+created
+date #display the date
+sickle se -f $i
+
+-t sanger -o $OUTFILE #run the sickle single end read function,
+
+file name is any and all .fastq files in the directory, tagging?, use sanger sequencing
+parameters, shortcut notation to tell us that the outfile is whatever the outfile has
+already been previously defined as
+
+done #work on the file is done
+date #display the date
+In [5]:
+
+%%bash
+#this script was a work-in-progress with Matt that I was unable to finish before the
+submission date
+cat sickle.sh
+#!/bin/bash #shebang line, informs the notebook of the language
+if [[ $# -eq 0 ]] ; then
+echo "usage: $0 output_directory"
+exit 0
+#above lines say that if no output directory is specified, inform the user and do not
+run the rest of the script
+fi #represents the end of the if/then function
+INDIR=$1 #the 'in' directory is argument 1
+OUTDIR=$2 #the 'out' directory is argument 2
+date #display the date
+for i in *.fastq #pertaining to any .fastq file in any directory containing i number of
+.fastq files
+do #perform the following
+echo "working on $i" #state to the user that the ith file is having an
+operation done unto it
+OUTFILE="$OUTDIR/$i" #defines the name of the outfile as circumstantial, with
+multiple outfiles being created and named after the .fastq files that exist in the
+'out' directory.
+echo "generating $OUTFILE with sickle" #tell the user that the outfile is being
+created
+date #display the date
+sickle se -f $i
+
+-t sanger -o $OUTFILE #run the sickle single end read
+
+function, file name is any and all .fastq files in the directory, tagging?, use sanger
+sequencing parameters, shortcut notation to tell us that the outfile is whatever the
+outfile has already been previously defined as
+done #work on the file is done
+
+date #display the date
+
+In [6]:
+
+!sickle se --help
+Usage: sickle se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq
+file>
+Options:
+-f, --fastq-file, Input fastq file (required)
+-t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to
+1.7), sanger (which is CASAVA >= 1.8)) (required)
+-o, --output-file, Output trimmed fastq file (required)
+-q, --qual-threshold, Threshold for trimming based on average quality in a window.
+Default 20.
+-l, --length-threshold, Threshold to keep a read based on length after trimming.
+Default 20.
+-x, --no-fiveprime, Don't do five prime trimming.
+-n, --trunc-n, Truncate sequences at position of first N.
+-g, --gzip-output, Output gzipped files.
+--quiet, Don't print out any trimming information
+--help, display this help and exit
+--version, output version information and exit
+
+1. Write a description of how the read quality (as measured by the fastqc analysis) changed by doing
+the read procssing with scythe and sickle. Also write a brief description of any issues with read
+quality that remain following read processing.
+Enter your descriptions here.
+Scythe trimmed adapter sequences while sickle removed low quality sequences. One fastq html file
+processed by scythe was not different than the raw outputs, while the others were. Scythe-processed files
+were mostly worse in overall quality compared to their raw counterparts. Sickle processing improved perbase sequence quality and other metrics, but occasionally lowered the quality of some metrics such as
+overrepresented sequences and sequence length distribution.
+
+

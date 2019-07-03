@@ -1,0 +1,112 @@
+In [ ]:
+
+#DOWNLOADING AND PROCESSING
+#used to download the necessary .fastq files
+parallel-fastq-dump -s "SRR2007675" "SRR2007674" "SRR2007673" "SRR2007672" "SRR2007671"
+-t 4
+#code used to trim adapters from .fastq files using illumina universal adapters; deemed
+acceptable as the paper does not provide the adapter file used for analysis and
+original fastqc analysis shows little adapter contamination
+cutadapt -a AGATCGGAAGAG -o tr_SRR2007672.fastq
+
+SRR2007672.fastq
+
+#code used to run sickle (sanger settings), trimmomatic has been abandoned because it
+is written in java and i dont know java
+sickle se -f
+/home/WWU/santang/BIOL497R_projects/slothy_bois/cutadapt_out/tr_SRR2007671.fastq -t
+sanger -o ./cutadapt_out/sickle_out/tr_SRR2007671_sickle.fastq
+#subsequent fastqc analysis
+fastqc -o ~/BIOL497R_projects/slothy_bois/cutadapt_out/sickle_out/fastqc/ -c
+~/BIOL497R_projects/slothy_bois/cutadapt_out/sickle_out/*.fastq
+#next, fastqc performed on original files were compared to files that were processed by
+cutadapt and sickle by adapting the above code
+
+#MITOGENOME CONSTRUCTION
+#Tutorial I used on the github entry for MITObim https://github.com/chrishah/MITObim
+#next was to run mira, which requires a manifest file, created as follows
+echo -e "\n#manifest file for basic mapping assembly with illumina data using MIRA 4\n\
+nproject = initial-mapping-M_darwinii-to-C_didactylus-mt\n\
+njob=genome,mapping,accurate\n\nparameters = -NW:mrnl=0 -AS:nop=1 SOLEXA_SETTINGS CO:msr=no\n\nreadgroup\nis_reference\ndata = BWA_and_associated/AY960980\(twotoed_reference\).1.fa\nstrain = C_didactylus-mt-genome\n\nreadgroup = reads\ndata =
+cutadapt_out/sickle_out/tr_SRR2007674_sickle.fastq\ntechnology = solexa\nstrain =
+M_darwinii-mt-enrichment-products\n" > manifest.conf
+#run mira
+mira manifest.conf
+
+#mira puts out an error for reasons unknown, fixed by running this code
+export LC_ALL=C
+#this code was required to get mitobim to run correctly, otherwise an error would occur
+in which miraconverter was not found
+export PATH=~/BIOL497R_projects/slothy_bois/mira_4.0.2_linux-gnu_x86_64_static/bin/:
+$PATH
+#run mitobim (v 1.9.1)
+MITObim/MITObim.pl -start 1 -end 10 -sample M_darwinii-mt-enrichment-products -ref
+C_didactylus-mt-genome -readpool cutadapt_out/sickle_out/tr_SRR2007674_sickle.fastq maf initial-mapping-M_darwinii-to-C_didactylus-mt_assembly/initial-mapping-M_darwiniito-C_didactylus-mt_d_results/initial-mapping-M_darwinii-to-C_didactylus-mt_out.maf &>
+log
+#we now have an assembled mitogenome!
+/home/WWU/santang/BIOL497R_projects/slothy_bois/C_hoffmanni_assembly/iteration5/
+C_hoffmanni-mt-enrichment-products-C_didactylus-mt-genome-it5_noIUPAC.fasta
+#This section was repeated for all five species
+
+#PRELIMINARY PHYLOGENETIC TREE CONSTRUCTION
+#concatenate *.fasta files and saved to sloth_mitobim.fasta to set the stage for
+phylogenetic analysis
+#next, MUSCLE, interlevied output
+
+in.fasta -phy -o sloth_mitobim.phy
+
+#use results from MUSCLE for sequence alignment
+#RAxML code executed by Matt, output analysis-RAxML/RAxML_bestTree.slothy_bois
+raxmlHPC-PTHREADS-SSE3 -f a -T 8 -m GTRGAMMA -N 100 -x 12345 -p 54321 -n slothy_bois -w
+./analysis-raxml -s sloth_mitoBIM.phy
+
+#IMPROVED TREE CONSTRUCTION
+%%R
+#IN R
+#plot RAxML tree with bootstrap support
+#https://nam03.safelinks.protection.outlook.com/?url=https%3A%2F
+
+%2Fbioconductor.statistik.tu-dortmund.de%2Fpackages%2F3.5%2Fbioc%2Fvignettes%2Fggtree
+%2Finst%2Fdoc%2FtreeImport.html&amp;data=02%7C01%7Ckingm28%40wwu.edu
+%7C8c9f34537eb147b7181208d6e4b2f3a4%7Cdc46140ce26f43efb0ae00f257f478ff
+%7C0%7C0%7C636947854568693720&amp;sdata=CzHcBZ6kvuyabzNABrw3mRPxkPQxXzZ2w8szyXMcjBo
+%3D&amp;reserved=0
+#https://nam03.safelinks.protection.outlook.com/?url=https%3A%2F%2Fgroups.google.com
+%2Fforum%2F%23!topic%2Fraxml%2FnbGd3rDKuUA&amp;data=02%7C01%7Ckingm28%40wwu.edu
+%7C8c9f34537eb147b7181208d6e4b2f3a4%7Cdc46140ce26f43efb0ae00f257f478ff
+%7C0%7C0%7C636947854568693720&amp;sdata=7NG2XRlmBqj
+%2FkkMV7nz2LngHs7LHhkVT6zmhQ5qS1h4%3D&amp;reserved=0
+
+setwd("/home/WWU/BIOL497R/BIOL497R_projects/slothy_bois/analysis-raxml/")
+
+library(ggtree); library(treeio); library(ggplot2)
+
+raxml_file <- system.file("extdata/RAxML",
+"RAxML_bipartitionsBranchLabels.slothy_bois", package="treeio")
+
+raxml <- read.raxml("RAxML_bipartitionsBranchLabels.slothy_bois")
+
+#pdf("sloth_tree.pdf", w=4,h=3)
+ggtree(raxml) + geom_label(aes(label=bootstrap, fill=bootstrap)) + geom_tiplab() +
+scale_fill_continuous(limits=c(0,100),low='darkgreen', high='red') +
+theme_tree2(legend.position='right') + ggplot2::xlim(0, 0.25)
+#dev.off()
+
+raxml@phylo$tip.label<c("M.darwinii","N.shastensis","C.hoffmanni","C.didactylus","B.variegatus")
+
+ggtree(raxml) + geom_label(aes(label=bootstrap, fill=bootstrap)) + geom_tiplab()
+
++
+
+scale_fill_continuous(limits=c(0,100),low='darkgreen', high='red') +
+theme_tree2(legend.position='right') + ggplot2::xlim(0, 0.26)
+#repeated for all five species
+
+#IDENT AND SIM
+#Run MUSCLE, with .fasta output (output data entered into the ident and sim tool on
+bioinformatics.org to elucidate identical and similar residues between species)
+muscle -in sloth_mitoBIM.fasta -out sloth_mitoBIM.fasta
+
+#sequence data from resulting fasta files
+
+

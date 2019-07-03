@@ -1,0 +1,248 @@
+Assignment 1 Key
+¶
+In [5]:
+
+#set up notebook environment
+import rpy2.rinterface
+%load_ext rpy2.ipython
+
+Question 1¶
+In [10]:
+
+%%bash
+#wget ftp://ftp.plantgenie.org/Data/EucGenIE/Eucalyptus_grandis/v2.0/GFF3/
+Egrandis_297_v2.0.gene_exons.gff3.gz
+#gunzip Egrandis_297_v2.0.gene_exons.gff3.gz
+#1A. Answer
+cut -f 3 Egrandis_297_v2.0.gene_exons.gff3 | sort | uniq
+# CDS, exon, five_prime_UTR, gene, mRNA, three_prime_UTR
+##annot-version v2.0
+CDS
+exon
+five_prime_UTR
+gene
+##gff-version 3
+mRNA
+##species Eucalyptus grandis
+three_prime_UTR
+In [18]:
+
+%%bash
+#1B. Answer
+
+grep -c "exon" Egrandis_297_v2.0.gene_exons.gff3
+253249
+In [19]:
+
+%%bash
+#1C. Answer
+grep "gene" Egrandis_297_v2.0.gene_exons.gff3 > Egrandis_297_v2.0.gene_only.gff3
+#1D. Answer
+wc -l Egrandis_297_v2.0.gene_only.gff3
+36349 Egrandis_297_v2.0.gene_only.gff3
+
+Question 2¶
+In [2]:
+
+%%R
+#2A. Answer
+#read in the gff3 file
+gff3<-read.table("Egrandis_297_v2.0.gene_only.gff3",sep="\t",header=F)
+#capture the gene names and create a new column
+gff3[,10]<-sub(".+Name=(.+)","\\1",gff3$V9, perl=TRUE)
+#generate an output object based on column numbers
+output<-gff3[,c(10,1,7,4,5)]
+names(output)<-c("gene_name", "chromosome", "strand", "start", "end")
+#verify output
+print(head(output))
+#write to file
+write.table(output,file="Egrandis_gene_locations_MZ.txt", sep="\t", row.names=F,
+quote=F)
+gene_name chromosome strand
+
+start
+
+end
+
+1 Eucgr.A00001
+
+Chr01
+
+- 2787014 2792340
+
+2 Eucgr.A00003
+
+Chr01
+
+- 2759421 2762078
+
+3 Eucgr.A00004
+
+Chr01
+
++ 2755630 2758272
+
+4 Eucgr.A00005
+
+Chr01
+
++ 2750009 2752455
+
+5 Eucgr.A00006
+
+Chr01
+
+- 2732189 2749011
+
+6 Eucgr.A00007
+
+Chr01
+
++ 2737840 2738467
+
+In [6]:
+
+%%R
+#2B. Answer
+pos_strand<-grep("\\+", output$strand, perl=T)
+print(length(pos_strand))
+print(mean(output$end-output$start +1))
+print(range(output$end-output$start +1))
+[1] 18244
+[1] 3104.842
+[1]
+
+201 56415
+
+In [12]:
+
+%%R
+#2C. Answer
+#pdf(file=Egrandis_gene_lengths_<MZ.pdf, width=6,hieght=6)
+hist(output$end-output$start +1, main= "Egrandis gene lengths", xlab="Gene length
+(bp)")
+#dev.off()
+
+Question 3¶
+#!/usr/bin/env bash
+for i in $*
+do
+echo "$i: $(grep -c ">" $i)"
+done
+In [7]:
+
+%%bash
+head count_sequences.sh
+bash count_sequences.sh /home/WWU/BIOL497R/data/Assignment_1/*.fasta
+#!/bin/bash
+for i in $*
+do
+echo "$i: $(grep -c ">" $i)"
+
+done
+/home/WWU/BIOL497R/data/Assignment_1/large.fasta: 20522
+/home/WWU/BIOL497R/data/Assignment_1/medium.fasta: 8639
+/home/WWU/BIOL497R/data/Assignment_1/small.fasta: 27
+
+Question 4¶
+In [9]:
+
+%%bash
+#4A. Answer
+du -k /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+md5sum /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+#4B. Answer
+grep -E "@.+ATCACG" /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq > out.txt
+wc -l out.txt
+head out.txt
+63560
+
+/home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+
+2cd7421f6bdf4a687a5e5550a233b16d
+/home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+200000 out.txt
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1149:2204 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1454:2168 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1392:2201 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1626:2170 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1576:2172 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1560:2201 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1924:2145 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1770:2155 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:2099:2197 1:N:0:ATCACG
+@HWI-ST1124:71:D0JD6ACXX:1:1101:2435:2173 1:N:0:ATCACG
+
+Question 5¶
+Fill in the blank, following the example.
+
+The repetition character means: match the preceding character zero* _</u> or more times.
+A. The repetition character + means: match the preceding character _ _ _ _ __one__ _ _ _ or more times.
+B. The meta-character $ means: match the _ _ _ _ __end__ _ _ _ _ _ of a string.
+C. The meta-character ^ has more than one meaning. Outside a character class, it matches the beginning
+of a string or the position immediate following a newline or carriage return. Inside a character class (e.g.,
+[^ etc ]) it means: _ _ __not or negate__ _ .
+D. The regular expression a[bcd]*b matches the substring _ _ __abcb__ _ _ _ _ in the string “abcbd”.
+
+Question 6¶
+In [25]:
+
+%%R
+#load the data
+promoter<-read.table("/home/WWU/BIOL497R/data/Assignment_1/grape_promoters.txt", sep="\
+t")
+
+grep("[AT]GATA[GA]", promoter[,2])
+[1] 1 2
+In [26]:
+
+%%R
+gregexpr("[AT]GATA[GA]", promoter[,2])
+[[1]]
+[1] 322 580 913
+attr(,"match.length")
+[1] 6 6 6
+attr(,"useBytes")
+[1] TRUE
+[[2]]
+[1]
+
+76 986
+
+attr(,"match.length")
+[1] 6 6
+attr(,"useBytes")
+[1] TRUE
+[[3]]
+
+[1] -1
+attr(,"match.length")
+[1] -1
+attr(,"useBytes")
+[1] TRUE
+
+Answer¶
+grep() returns the row index numbers of strings that contain the GATA motif but does not count the
+number of occurrences with in a string
+gregexpr() returns the number and location of GATA motifs with in a string
+gene
+GSVIVT01034325001
+
+locations
+322; 580;
+913
+
+count
+3
+
+GSVIVT01034326001 76; 986
+
+2
+
+GSVIVT01034341001 -
+
+0
+
+In [ ]:
+
+

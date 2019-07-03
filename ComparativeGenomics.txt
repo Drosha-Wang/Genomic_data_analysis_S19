@@ -1,0 +1,941 @@
+Comparative Genomics Tutorial
+¶
+Tutorial Outline¶
+1. Introduction
+2. Human - Mouse synteny
+1. Detect syntenic relationships
+2. Generate syntenic dot plot - whole genome
+3. Generate dual synteny plot
+3. Whole genome duplication
+1. Detect_syntenic_tandem_arrays
+2. Dissect_multiple_alignment
+3. Generate syntenic dot plot
+4. Generate dual synteny plot
+5. Generate circular synteny plot
+4. Raspberry (Rubus) - Strawberry (Fragaria) genome comparison
+1. Generate syntenic dot plot
+
+1. Introduction
+Genomes of living organisms consist of genes and noncoding DNA arranged in particular orders on one or
+more chromosomes. Eukaryotes usually have several pairs of linear chromosomes (humans have 23 pairs
+in each somatic cell), but prokaryotes typically have only one or a few circular (sometimes linear)
+chromosomes. The order of genes (or sets of genes) along a particular chromosome of a particular species
+is ordinarily conserved, and the list of genes or physical markers along a genome, together with the
+distances between these genes or markers, is called either a genetic or physical map, depending upon the
+units in which distances are measured. For each species, there is a particular genetic map that
+distinguishes it from other species. These genetic maps and genome sequences of contemporary
+organisms contain a record of changes that have occurred over time. The types of changes that may have
+occurred include:
+Deletion: Removal of one or more contiguous bases.
+Insertion: Insertion of one or more contiguous bases between adjacent nucleotides in a
+
+DNA sequence. This is often associated with insertion of transposable elements.
+Segmental duplication: Appearance of two or more copies of the same extended portion
+of the genome in different locations in the DNA sequence.
+Inversion: Reversal of the order of genes or other DNA markers in a subsequence relative
+to flanking markers in a longer sequence. Within a longer sequence, inversion replaces one
+strand of the subsequence with its complement, maintaining 5′ to 3′ polarity.
+Translocation: Placement of a chromosomal segment into a new se- quence context
+elsewhere in the genome.
+Recombination: In vivo joining of one DNA sequence to another. When similar sequences
+are involved, this is called homologous recombination. Point mutation: Substitution of the
+base usually found at a position in the DNA by another as a result of an error in base
+insertion by DNA polymerase or misrepair after chemical modification of a base.
+For example, even though the mouse (Mus musculus) contains most of the same types of genes found in
+humans, the genetic map of the mouse differs from that of humans. This is illustrated in Fig. 1 for human
+(Homo sapiens) chromosome Hsa6, which contains blocks of DNA sequences corresponding to portions of
+six different mouse chromosomes.
+
+Figure 1: Syntenic blocks conserved between human chromosome Hsa6 and mouse
+
+chromosomes. Broken lines indicate regions that appear in inverted orders in the two
+organisms. Reprinted from Gregory SG et al. (2002) Nature 418:743–750.
+Clearly, segments of DNA in the two species were rearranged with respect to each other during their
+independent descent from a common ancestor. If blocks of sequences are excised from one location and
+inserted into another, those sequences are said to have been translocated. On the other hand, it is
+possible that the chunks of sequence in a syntenic block remain together but are permuted in one
+organism relative to the other. An example of permutation is blocks 1-2-3 of Hsa6 in Fig. 1, which appear
+in the order 3-1-2 in the mouse chromosome Mmu13. Sometimes sequences in the genome of an organism
+are duplicated elsewhere in the same genome (either on the same or on a different chromosome). For
+example, it is estimated that around 5% of the human genome (exclusive of transposable elements)
+consists of duplicated sequences (Bailey et al., 2002).
+When comparing genomes of two organisms such as mice and humans, we sometimes observe local
+similarities in the gene content and gene order. If two or more genes that occur together on a single
+chromosome in organism B also occur together on a particular chromosome in organism C, this occurrence
+is an example of conserved synteny. As shown in Fig. 1, the gene orders may or may not be conserved
+within syntenic blocks that are distributed among different chromosomes in a related organism.
+
+2. Human - Mouse synteny
+In this example, we will be generating the syntenic relationships between human and mouse genomes in a
+way that is similar to Fig. 1. To do this, we need to get the reference genome information for each species
+and in particular, we would need to download the protein fasta and gff files. These files are located in the
+following locations on bioinformatics:
+Human: Release 30 (GRCh38.p12) - https://www.gencodegenes.org/human/
+/home/WWU/BIOL497R/data/CompGen/gencode.v30.pc_primary.fa
+/home/WWU/BIOL497R/data/CompGen/gencode.v30.gene_only.gff3
+Mouse: Release M21 (GRCm38.p6) - https://www.gencodegenes.org/mouse/
+/home/WWU/BIOL497R/data/CompGen/gencode.vM21.pc_primary.fa
+/home/WWU/BIOL497R/data/CompGen/gencode.vM21.gene_only.gff3
+The analysis of syntenic regions between or within species genomes requires the user to generate a large
+blast database that compares all protein sequences and identifies sequences that are similar based on
+user defined thresholds.
+For this analysis to generate more reasonable synteny results, the number of BLASTP hits for a gene
+should be restricted to around top 5 (-b 5 -v 5). In addition, we want to identify sequences that have a
+high degree of similarity and to do this we specify an e-value threshold (-e 1e-10). More infomation on evalues can be found here.
+Example bash code:
+
+DATA=/home/WWU/BIOL497R/data/CompGen
+
+#first genenerate a blast database
+makeblastdb -in $DATA/gencode.v30.pc_primary.fa -dbtype prot
+#second blast Mouse (query) versus Human (ref)
+blastall -a 40 -i $DATA/gencode.vM21.pc_primary.fa
+-d $DATA/gencode.v30.pc_primary.fa -p blastp
+
+\
+\
+
+-e 1e-10 -b 5 -v 5 -m 8 -o human/human_mouse.blast
+These results can be found at:
+
+~/BIOL497R/notebooks/Ex6_ComparativeGenomics/human/human_mouse.blast
+
+A. Detect syntenic relationships
+Next we need to run the program MCScanX, which parses the blastp results to detect syntenic blocks and
+progressively aligns multiple syntenic blocks against reference genomes. To do this, MCscanX reads in two
+data files.
+The human_mouse.blast file is simply the direct BLASTP output of m8 format as following:
+
+ENSMUSG00000000001.4
+
+ENSG00000065135.11
+
+354
+
+0.0
+
+1
+
+354
+
+ENSG00000127955.17
+
+354
+
+0.0
+
+354
+
+ENSG00000114353.17
+
+354
+
+0.0
+
+339
+
+6
+
+0
+
+1
+
+93.79
+
+354
+
+22
+
+0
+
+1
+
+84.62
+
+312
+
+47
+
+1
+
+44
+
+664
+
+ENSMUSG00000000001.4
+28
+
+354
+
+688
+
+ENSMUSG00000000001.4
+1
+
+98.31
+
+566
+
+The human_mouse.gff file was generated by concatinating the two gff3 and reformated to the following
+tab-delimited format:
+
+Hsa1
+
+ENSG00000186092.6
+
+65419
+
+71585
+
+Hsa1
+
+ENSG00000284733.1
+
+450703
+
+451697
+
+Hsa1
+
+ENSG00000284662.1
+
+685679
+
+686673
+
+MmuM
+
+ENSMUSG00000064367.1
+
+11742
+
+13565
+
+MmuM
+
+ENSMUSG00000064368.1
+
+13552
+
+14070
+
+MmuM
+
+ENSMUSG00000064370.1
+
+14145
+
+15288
+
+.
+.
+.
+
+In [ ]:
+
+%%bash
+MCScanX
+
+human/human_mouse
+
+The execution of MCScanX outputs one text file human_mouse.collinearity, containing pairwise syteny
+
+blocks as follows:
+
+## Alignment 0: score=1294.0 e_value=7.6e-82 N=26 Hsa1&Mmu1 plus
+0-
+
+0:
+
+ENSG00000155816.20
+
+ENSMUSG00000028354.13
+
+3e-88
+
+0-
+
+1:
+
+ENSG00000180875.5
+
+ENSMUSG00000050069.3
+
+3e-108
+
+0-
+
+2:
+
+ENSG00000182901.16
+
+ENSMUSG00000026527.13
+
+0
+
+.
+.
+.
+## Alignment 1: score=306.0 e_value=1.1e-11 N=7 Hsa1&Mmu1 plus
+1-
+
+0:
+
+ENSG00000143297.19
+
+ENSMUSG00000070504.9
+
+9e-20
+
+1-
+
+1:
+
+ENSG00000180708.5
+
+ENSMUSG00000037924.6
+
+6e-99
+
+1-
+
+2:
+
+ENSG00000173285.4
+
+ENSMUSG00000062527.6
+
+6e-100
+
+B. Generate syntenic dot plot - whole genome
+This java script generates a dot plot for all the syntenic blocks on two sets of chromosomes given by the
+user.
+Usage:
+
+java dot_plotter -g gff_file -s synteny_file -c control_file -o output_PNG_file
+The input files include a gff file containing all gene positions, a synteny/collinearity file generated by
+MCScanX, and a control file (.ctl) containing plot size and chromosome IDs. The control file can be easily
+made by modifying the hm_dot.ctl file:
+
+1800
+
+//dimension (in pixels) of x axis
+
+1800
+
+//dimension (in pixels) of y axis
+
+Hsa1,Hsa2,Hsa3,Hsa4,Hsa5,Hsa6,Hsa7,Hsa8,Hsa9,Hsa10,Hsa11,Hsa12,Hsa13,Hsa14,Hsa15,Hsa16,
+Hsa17,Hsa18,Hsa19,Hsa20,Hsa21,Hsa22,HsaM,HsaX,HsaY,
+
+//chromosomes in x axis
+
+Mmu1,Mmu2,Mmu3,Mmu4,Mmu5,Mmu6,Mmu7,Mmu8,Mmu9,Mmu10,Mmu11,Mmu12,Mmu13,Mmu14,Mmu15,Mmu16,
+Mmu17,Mmu18,Mmu19,MmuM,MmuX,MmuY,
+
+//chromosomes in y axis
+
+Note that no space is allowed between adjacent chromosome IDs.
+Output:
+Output is an image file (PNG format) which can be viewed with an image viewer. Each dot is a sytenic gene
+pair between the two sets of chromosomes. Different colors of dots, generated randomly, represent
+different syntenic blocks.
+In [17]:
+
+%%bash
+cd downstream_analyses/
+java dot_plotter -g ../human/human_mouse.gff -s ../human/human_mouse.collinearity -c
+
+hm_dot.ctl -o ../human/human_mouse_dot.png
+
+C. Generate dual synteny plot
+This java script generates a dual synteny plot which links all the synteny blocks between two sets of
+chromosomes using straight lines. The output should look similar to Fig. 1 but some of the mouse
+chromosome names have changed because of revisions to the mouse genome since 2002.
+Usage:
+
+java dual_synteny_plotter -g gff_file -s synteny_file -c control_file -o
+output_PNG_file
+The input files include a gff file containing all gene positions, a synteny/collinearity file generated by
+MCScanX, and a control file (.ctl) containing plot size and chromosome IDs. The control file can be easily
+made by modifying the column.ctl file:
+
+600
+1800
+
+//plot width (in pixels)
+//plot height (in pixels)
+
+Hsa1 //chromosomes in the left column
+Mmu1,Mmu3,Mmu4,Mmu8,Mmu10,Mmu11,Mmu13
+
+//chromosomes in the right column
+
+Note that no space is allowed between adjacent chromosome IDs.
+Output:
+Output is an image file (PNG format) which can be viewed with an image viewer. Each line links a pair of
+syntenic genes between the two sets of chromosomes. Different colors of lines, generated randomly,
+represent different syntenic blocks.
+In [20]:
+
+%%bash
+cd downstream_analyses/
+java dual_synteny_plotter -g ../human/human_mouse.gff -s
+../human/human_mouse.collinearity -c hm_column.ctl -o ../human/human_mouse_dual_syn.png
+
+3. Whole genome duplication
+In the example, we are going to generate a list of syntenic genes within the Populus genome (version 210).
+
+Populus and all Salicaceae under went a recent whole genome duplication about 60 mya (Tuskan et al.,
+2006) and this resulted in many of the genes in the genome having a shared ancentral history and these
+duplicated genes are commonly refered to as paralogs.
+First, we would need to generate the blast comparison between all pairwise combinations of protein
+sequences in Populus and this step takes a long time (60-80 min). Here is a typical parameter setting for
+
+generating the pt210.blast file.
+Example bash code:
+
+DATA=/home/WWU/BIOL497R/data/CompGen
+#first genenerate a blast database
+makeblastdb -in $DATA/Ptrichocarpa_210_v3.0.protein_primaryTranscriptOnly.fa -dbtype
+prot
+#second blast Populus versus Populus
+blastall -a 4 -i $DATA/Ptrichocarpa_210_v3.0.protein_primaryTranscriptOnly.fa
+
+\
+
+-d $DATA/Ptrichocarpa_210_v3.0.protein_primaryTranscriptOnly.fa -p blastp
+
+\
+
+-e 1e-10 -b 5 -v 5 -m 8 -o populus/pt210.blast
+These results have already been genearted and can be found at:
+
+~/BIOL497R/notebooks/Ex6_ComparativeGenomics/populus/pt210.blast
+Next, we need to run the program MCScanX, which parses the blastp results to detect syntenic blocks and
+progressively aligns multiple syntenic blocks against reference genomes. To do this, MCscan2 reads in two
+data files.
+The pt210.blast file is simply the direct BLASTP output of m8 format as following:
+
+Potri.T155100
+
+Potri.T155100
+
+Potri.T155100
+
+Potri.002G022700
+
+100.00
+
+103 0
+
+83.50
+
+0
+
+103 15
+
+1
+
+103 1
+
+2
+
+1
+
+103 3e-71
+
+103 1
+
+207
+
+101 5e-47
+
+145
+
+The pt210.gff file holds gene positions, following a tab-delimited format:
+
+pt1 Potri.001G000100
+
+1659
+
+2502
+
+pt1 Potri.001G000200
+
+2905
+
+6646
+
+pt1 Potri.001G000300
+
+8390
+
+8860
+
+In [ ]:
+
+%%bash
+MCScanX
+
+populus/pt210
+
+The execution of MCScanX outputs one text file pt210.collinearity, containing pairwise syteny blocks as
+follows:
+
+## Alignment 0: score=286.0 e_value=2.8e-10 N=6 pt1&pt1 plus
+0-
+
+0:
+
+Potri.001G443400
+
+Potri.001G445000
+
+0
+
+0-
+
+1:
+
+Potri.001G443500
+
+Potri.001G445100
+
+5e-90
+
+0-
+
+2:
+
+Potri.001G443900
+
+Potri.001G445600
+
+0
+
+0-
+
+3:
+
+Potri.001G444200
+
+Potri.001G445800
+
+1e-97
+
+0-
+
+4:
+
+Potri.001G444800
+
+Potri.001G446500
+
+6e-33
+
+0-
+
+5:
+
+Potri.001G444900
+
+Potri.001G446800
+
+1e-34
+
+## Alignment 1: score=252.0 e_value=3.6e-08 N=6 pt1&pt1 plus
+1-
+
+0:
+
+Potri.001G422900
+
+Potri.001G432500
+
+5e-63
+
+1-
+
+1:
+
+Potri.001G425400
+
+Potri.001G433300
+
+2e-174
+
+1-
+
+2:
+
+Potri.001G425800
+
+Potri.001G433800
+
+1e-100
+
+A. Detect_syntenic_tandem_arrays
+Tandem duplications often complicate synteny detection. To enhance the power of synteny detection,
+MCScan algorithms use the gene with best BLASTP hit to represent a tandem array. This program
+transforms match genes in syntenic blocks into tandem arrays if tandem duplications exist there.
+Usage:
+
+./detect_syntenic_tandem_arrays -g gff_file -b blast_file -s synteny_file -o
+output_file
+Output:
+The path of output_file should be specified by the user. If any gene of a syntenic pair is located in a
+tandem array, the syntenic pair will be written into the output_file.
+In [ ]:
+
+# this program does not like running with %%bash
+# running the !bash_command
+!detect_syntenic_tandem_arrays -g populus/pt210.gff -b populus/pt210.blast -s
+populus/pt210.collinearity -o populus/pt210.tandem_arrays
+
+B. Dissect_multiple_alignment
+This program dissects the number of syntenic blocks at each gene locus of the reference genome(s) into
+the number of intra-species syntenic blocks and the number of inter-species syntenic blocks.
+Usage:
+
+./dissect_multiple_alignment -g gff_file -c collinearity_file -o output_file
+Output:
+The path of output_file should be specified by the user. The first and second columns of output_file show
+the chromosomes and genes in reference genome(s). The 3rd, 4th and 5th columns show the numbers of
+intra-species syntenic blocks, inter-species syntenic blocks and outgroup species respectively. In addition,
+the program prints a summary of the number of genes that have been detected for each copy level. For
+example there are 7320 genes that can be found twice in the genome and 9560 that can be found three
+times.
+In [ ]:
+
+!dissect_multiple_alignment -g populus/pt210.gff -c populus/pt210.collinearity -o
+
+populus/pt210_multiple_alignment
+
+C. Generate syntenic dot plot
+This java script generates a dot plot for all the syntenic blocks on two sets of chromosomes given by the
+user.
+Usage:
+
+java dot_plotter -g gff_file -s synteny_file -c control_file -o output_PNG_file
+The input files include a gff file containing all gene positions, a synteny/collinearity file generated by
+MCScanX, and a control file (.ctl) containing plot size and chromosome IDs. The control file can be easily
+made by modifying the dot.ctl file:
+
+1800
+
+//dimension (in pixels) of x axis
+
+1800
+
+//dimension (in pixels) of y axis
+
+pt1,pt2,pt3,pt4,pt5,pt6,pt7,pt8,pt9,pt10,pt11,pt12,pt13,pt14,pt15,pt16,pt17,pt18,pt19
+//chromosomes in x axis
+pt1,pt2,pt3,pt4,pt5,pt6,pt7,pt8,pt9,pt10,pt11,pt12,pt13,pt14,pt15,pt16,pt17,pt18,pt19
+//chromosomes in y axis
+Note that no space is allowed between adjacent chromosome IDs.
+Output:
+Output is an image file (PNG format) which can be viewed with an image viewer. Each dot is a sytenic gene
+pair between the two sets of chromosomes. Different colors of dots, generated randomly, represent
+different syntenic blocks.
+In [77]:
+
+%%bash
+cd downstream_analyses/
+java dot_plotter -g ../populus/pt210.gff -s ../populus/pt210.collinearity -c dot.ctl -o
+../populus/pt210_dot.png
+
+D. Generate dual synteny plot
+This java script generates a dual synteny plot which links all the synteny blocks between two sets of
+chromosomes using straight lines.
+Usage:
+
+java dual_synteny_plotter -g gff_file -s synteny_file -c control_file -o
+output_PNG_file
+
+The input files include a gff file containing all gene positions, a synteny/collinearity file generated by
+MCScanX, and a control file (.ctl) containing plot size and chromosome IDs. The control file can be easily
+made by modifying the column.ctl file:
+
+600
+1800
+
+//plot width (in pixels)
+//plot height (in pixels)
+
+pt1 //chromosomes in the left column
+pt3,pt,pt9,pt11,pt17
+
+//chromosomes in the right column
+
+Note that no space is allowed between adjacent chromosome IDs.
+Output:
+Output is an image file (PNG format) which can be viewed with an image viewer. Each line links a pair of
+syntenic genes between the two sets of chromosomes. Different colors of lines, generated randomly,
+represent different syntenic blocks.
+In [78]:
+
+%%bash
+cd downstream_analyses/
+java dual_synteny_plotter -g ../populus/pt210.gff -s ../populus/pt210.collinearity -c
+column.ctl -o ../populus/pt210_dual_syn.png
+
+E. Generate circular synteny plot
+This Java scripts generates a circular plot which links all the syntenic blocks with curved lines between and
+within the chromosome set given by users.
+Usage:
+
+java circle_plotter -g gff_file -s synteny_file -c control_file -o output_PNG_file
+The input files include a gff file containing all gene positions, a synteny/collinearity file generated by
+MCScanX, and a control file (.ctl) containing plot size and chromosome IDs. The control file can be easily
+made by modifying the circle.ctl file:
+
+1800
+
+//plot width and height (in pixels)
+
+pt1,pt2,pt3,pt4,pt5,pt6,pt7,pt8,pt9,pt10,pt11,pt12,pt13,pt14,pt15,pt16,pt17,pt18,pt19
+//chromosomes in the circle
+Note that no space is allowed between adjacent chromosome IDs.
+Output:
+Output is an image file (PNG format) which can be viewed with an image viewer. Each curved line links a
+pair of syntenic genes between or within the given set of chromosomes. Different colors of lines, generated
+randomly, represent different syntenic blocks.
+
+In [45]:
+
+%%bash
+cd downstream_analyses/
+java circle_plotter -g ../populus/pt210.gff -s ../populus/pt210.collinearity -c
+circle.ctl -o ../populus/pt210_circle.png
+
+4. Raspberry (Rubus) - Strawberry
+(Fragaria) genome comparison
+In this part of the exercise, we are going to generate a syntenic dot plot between the Rubus occidentalis v1
+genome and Fragaria vesca v4.0 genome. This should be similar to the results that we discussed in our
+Friday discussion of the VanBuren paper but the Rubus v1 genome was more fragmented and contained
+numerious mis-assemblies.
+Generating the blast results for all proteins in a genome takes a long time (~2 hours). Here is a typical
+parameter setting for generating the Rocc_Fvesca.blast file.
+Example bash code:
+
+DATA=/home/WWU/BIOL497R/data/CompGen
+#first genenerate a blast database
+makeblastdb -in $DATA/makeblastdb -in Rubus_occidentalis_v1.0.a1.proteins.fasta -dbtype
+prot
+#second blast Populus versus Populus
+blastall -a 4 -i $DATA/Fragaria_vesca_v4.0.a1_makerStandard_proteins.fasta
+-d $DATA/Rubus_occidentalis_v1.0.a1.proteins.fasta -p blastp
+
+\
+
+\
+
+-e 1e-10 -b 5 -v 5 -m 8 -o Rubus_Fragaria/Rocc_Fvesca.blast
+These results have already been genearted and can be found at:
+
+~/BIOL497R/notebooks/Ex6_ComparativeGenomics/Rubus_Fragaria/Rocc_Fvesca.blast
+Next we need to run the program MCScanX, which parses the blastp results to detect syntenic blocks and
+progressively aligns multiple syntenic blocks against reference genomes. To do this, MCscan2 reads in two
+data files.
+The Rocc_Fvesca.gff file holds gene positions, following a tab-delimited format and was generated by
+concatinating the individual gff files togeher with cat:
+
+fv1 FvH4_c1g00020
+
+2432
+
+2674
+
+fv1 FvH4_c1g00310
+
+61177
+
+63300
+
+fv1 FvH4_c1g00060
+
+11835
+
+12041
+
+.
+.
+.
+ro1 Bras_G00001 1023
+
+9108
+
+ro1 Bras_G00002 10022
+
+10333
+
+ro1 Bras_G00003 11180
+
+13350
+
+Now we are ready to run MCScanX on the results of the Strawberry and Raspberry protein sequences
+In [ ]:
+
+%%bash
+MCScanX
+
+Rubus_Fragaria/Rocc_Fvesca
+
+The execution of MCScanX outputs one text file Rocc_Fvesca.collinearity, containing pairwise syteny
+blocks as follows:
+
+## Alignment 2: score=327.0 e_value=1.1e-10 N=7 Fvb1&ro132 plus
+2-
+
+0:
+
+FvH4_1g19770
+
+Bras_G14132
+
+1e-40
+
+2-
+
+1:
+
+FvH4_1g19780
+
+Bras_G14134
+
+7e-39
+
+2-
+
+2:
+
+FvH4_1g19830
+
+Bras_G14139
+
+3e-169
+
+2-
+
+3:
+
+FvH4_1g19840
+
+Bras_G14148
+
+1e-154
+
+2-
+
+4:
+
+FvH4_1g19880
+
+Bras_G14152
+
+0
+
+2-
+
+5:
+
+FvH4_1g19920
+
+Bras_G14156
+
+2e-155
+
+2-
+
+6:
+
+FvH4_1g19970
+
+Bras_G14159
+
+3e-75
+
+## Alignment 3: score=270.0 e_value=1.8e-13 N=6 Fvb1&ro14 minus
+3-
+
+0:
+
+FvH4_1g30070
+
+Bras_G04110
+
+0
+
+3-
+
+1:
+
+FvH4_1g30090
+
+Bras_G04109
+
+9e-86
+
+3-
+
+2:
+
+FvH4_1g30100
+
+Bras_G04108
+
+2e-96
+
+3-
+
+3:
+
+FvH4_1g30150
+
+Bras_G04104
+
+0
+
+A. Generate syntenic dot plot
+This java script generates a dot plot for all the syntenic blocks on two sets of chromosomes given by the
+user.
+Usage:
+
+java dot_plotter -g gff_file -s synteny_file -c control_file -o output_PNG_file
+The input files include a gff file containing all gene positions, a synteny/collinearity file generated by
+MCScanX, and a control file (.ctl) containing plot size and chromosome IDs. The control file can be easily
+made by modifying the Species_dot.ctl file:
+
+1800
+
+//dimension (in pixels) of x axis
+
+1800
+
+//dimension (in pixels) of y axis
+
+ro1,ro2,ro3,ro4,ro5,ro6,ro7 ... ro50
+
+//chromosomes in x axis
+
+Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7
+
+//chromosomes in y axis
+
+Note that no space is allowed between adjacent chromosome IDs.
+Output:
+Output is an image file (PNG format) which can be viewed with an image viewer. Each dot is a sytenic gene
+pair between the two sets of chromosomes. Different colors of dots, generated randomly, represent
+different syntenic blocks.
+In [73]:
+
+%%bash
+cd downstream_analyses/
+java dot_plotter -g ../Rubus_Fragaria/Rocc_Fvesca.gff -s
+../Rubus_Fragaria/Rocc_Fvesca.collinearity -c Species_dot.ctl -o
+../Rubus_Fragaria/Rocc_Fvesca_dot.png
+In [ ]:
+
+

@@ -1,0 +1,259 @@
+Assignment 1
+¶
+Using regular expressions in combination with other commands can be a very powerful tool. Below, you
+will work through some questions that will highlight the utility of these commands for working with large
+text files such as fastq and gff3 files.
+Some files for the assignment can be found on there server at:
+
+/home/WWU/BIOL497R/data/Assignment_1/
+Note: These files are accessable though bash commands such as cp, grep, etc. and R commands such as
+read.table(), grep(), etc.
+
+In [ ]:
+
+#set up notebook environment
+import rpy2.rinterface
+%load_ext rpy2.ipython
+In [ ]:
+
+In [ ]:
+
+Question 1¶
+Download the genome annoation file for Eucalyptus grandis v2.0 with wget, unzip with gunzip and use
+bash to examine the file:
+
+ftp://ftp.plantgenie.org/Data/EucGenIE/Eucalyptus_grandis/v2.0/GFF3/
+Egrandis_297_v2.0.gene_exons.gff3.gz
+A. What types of features are stored in the gff3 file?
+B. How many exons have been annotated in the v2.0 genome?
+C. Create a text file that only contains the gene features and name it
+
+"Egrandis_297_v2.0.geneonly<initials>.gff3" , where <initials> represents the first letter from your
+first and last names.
+D. How many genes are in the Egrandis genome?
+In [ ]:
+
+#retrieve the file
+wget ftp://ftp.plantgenie.org/Data/EucGenIE/Eucalyptus_grandis/v2.0/GFF3/
+Egrandis_297_v2.0.gene_exons.gff3.gz
+#unzip the file
+gunzip Egrandis_297_v2.0.gene_exons.gff3.gz
+
+#display contents of the file (probably the wrong choice)
+cat Egrandis_297_v2.0.gene_exons.gff3
+#A. CDS's, exons, genes, 3' and 5' UTRs, and mRNA sequences exist in this file
+#determine the number of exons in the file
+grep -c "exon" Egrandis_297_v2.0.gene_exons.gff3
+#B. 253,349 exons have been annotated in this genome
+#C. on the left of the capture arrow exists the desired contents of the new file, on
+the right exists the name
+grep "gene" Egrandis_297_v2.0.gene_exons.gff3
+
+>
+
+Egrandis_297_v2.0.gene_only_GS.gff3
+
+#determine number of annotated genes in this genome
+grep -c "gene" Egrandis_297_v2.0.gene_exons.gff3
+#D. 36,349 genes have been annotated in this genome
+
+Question 2¶
+Using R and the Egrandis_297_v2.0.geneonly<initials>.gff3 created in Question 1, generate the following
+outputs.
+Note: If you are going to do this directly in the notebook, make sure to run the first set of python code to
+setup the environment.
+A. Create a tab deliminated text file that has 5 columns of data in the following order (gene_name,
+chromosome, strand, start, end). Save the file as "Egrandis_genelocations<initials>.txt" , where
+<initials> represents the first letter from your first and last names.
+
+gene_name chromosome strand
+
+start
+
+end
+
+Eucgr.A00003 Chr01
+
+-
+
+2759421 2762078
+
+Eucgr.L00998 scaffold_87
+
++
+
+41936
+
+47075
+
+B. Calculate the following statistics.
+•
+
+Number of genes on positive strand (+).
+
+•
+
+Mean gene length in base pairs.
+
+•
+
+Length of shortest and longest gene.
+
+C. Plot a frequency histogram on the gene lengths and save it to a pdf named
+"Egrandis_genelengths<initials>.pdf" , where <initials> represents the first letter from your first and
+last names.
+In [ ]:
+
+%%R
+#A.
+genes<-read.table("Egrandis_297_v2.0.gene_only_GS.gff3")
+
+Q2A_data<-genes[c(9,1,7,4,5)]
+
+write.table(Q2A_data, file="Egrandis_gene_locations_GS.txt")
+#B.
+#find number of genes located on the positive strand
+!grep -c "+" ./Egrandis_gene_locations_GS.txt
+#There are 18,244 genes located on the positive strand.
+#first, it will be necessary to create an object that represents gene lengths, equal to
+the difference between the start and end positions on the chromosomes.
+#create an object representing gene chromosomal locations
+gposition<- genes[c(4,5)]
+
+#find a way to subract two columns from one another given that function diff() did not
+work
+start<-gposition[c(1)]
+end<-gposition[c(2)]
+
+end-start
+genelengths<-end-start
+#we now have an object representing gene lengths, now to take the mean.
+sum<-sum(genelengths)
+n<-36349
+mean<-sum/n
+#the above step was more work than it had to be, function mean() would not work,
+function length() would not work.
+#now, to find the smallest and largest genes, simply use the min() and max () functions
+max(genelengths)
+min(genelengths)
+#largest gene is 56414bp, smallest gene is 200bp
+
+Question 3¶
+Create a bash script called countsequences<initials>.sh that is able to read any number of fasta files on
+the command line and prints the number of sequence entries in each file as follows.
+
+/home/WWU/BIOL497R/data/Assignment_1/small.fasta
+/home/WWU/BIOL497R/data/Assignment_1/medium.fasta
+/home/WWU/BIOL497R/data/Assignment_1/large.fasta
+Here's a sample usage:
+zinkgrm$ bash count_sequences_MZ.sh *.fasta large.fasta: 20522 medium.fasta: 8639 small.fasta: 27
+In [4]:
+
+%%bash
+
+~/count_sequences_GS.sh /home/WWU/BIOL497R/data/Assignment_1/*.fasta
+/home/WWU/BIOL497R/data/Assignment_1/large.fasta: 20522
+/home/WWU/BIOL497R/data/Assignment_1/medium.fasta: 8639
+/home/WWU/BIOL497R/data/Assignment_1/small.fasta: 27
+
+Question 4¶
+Illumina sequencing results are a collection of millions of short reads that contain an identifier line, DNA
+sequence and base pair quality scores. The identifier line contains information about the sequencing run
+and the barcode sequnce that references the sample from which the read originated. For this assignment
+use the file Illumina_50bp.fastq. Note you will need to look up some of these commands becasue we
+have not talked about them in class. For fastq format, see https://en.wikipedia.org/wiki/FASTQ_format or
+https://help.basespace.illumina.com/articles/descriptive/fastq-files
+
+/home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+a. What is the file size (kilobytes) and md5sum of the fastq file? Provide your code
+b. Create a file (identifiers_combined.txt) with all of the identifier lines belonging to sample FR32 sample
+(barcode sequence index - ATCACG). Provide your code.
+In [5]:
+
+%%bash
+head /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1149:2204 1:N:0:ATCACG
+TGGGAGTCAAACTTCAGAAACGGCACCCTGGAGACAGAATAAAGCTCAGCG
++
+BCCFDFDFHHHHHJHIJJJJJJJIJJJJJJJFIDHFHIJJJIJJIJJJJJJ
+@HWI-ST1124:71:D0JD6ACXX:7:1101:5201:137279 1:N:0:GGCTAC
+TTGTGTTGATGGTCTCTGTACTTGCTTTGTGGGTTCAACCTTCGATTCAAT
++
+BCCDFDEFFHHHHJJJIIJJIJJJJJJJIHIIIHGHIJJJJJJIIJJJJJJ
+@HWI-ST1124:71:D0JD6ACXX:1:1101:1454:2168 1:N:0:ATCACG
+CTCGGATGAAGGTGGGGATAAAGATGGAAAAGATAAAGACAAGANGGGTAA
+In [6]:
+
+%%bash
+#a.
+#the following command lists the file size as ~65000kb
+ls -l /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+#the following command lists the md5sum as 2cd7421f6bdf4a687a5e5550a233b16d
+md5sum /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+#b.
+#a grep search of the identifier sequence captured in a file with the desired name
+should give the desired result.
+grep "ATCACG" /home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq >
+~/identifiers_combined.txt
+
+-rw-r--r-- 1 zinkgrm biol497r-instructors 65081383 Apr
+
+3 09:51
+
+/home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+2cd7421f6bdf4a687a5e5550a233b16d
+/home/WWU/BIOL497R/data/Assignment_1/Illumina_50bp.fastq
+
+Question 5¶
+Fill in the blank, following the example.
+The repetition character means: match the preceding character zero* _</u> or more times.
+A. The repetition character + means: match the preceding character _ _ _ _ _ one_ _ _ _ or more times.
+B. The meta-character $ means: match the _ _ _ end_ _ _ _ _ _ of a string.
+C. The meta-character ^ has more than one meaning. Outside a character class, it matches the beginning
+of a string or the position immediate following a newline or carriage return. Inside a character class (e.g.,
+[^ etc ]) it means: _ _ _ _ _match any character except those in brackets _ _ _ _ .
+D. The regular expression a[bcd]*b matches the substring a(b and/or c and/or d)b _ _ _ _ _ _ in the string
+“abcbd”."
+In [ ]:
+
+Question 6¶
+Consider the file grape_promoters.txt, which contains 1000bp upstream of the transcriptional start site
+for 3 genes from the Vitis vinifera genome:
+
+head /home/WWU/BIOL497R/data/Assignment_1/grape_promoters.txt
+GSVIVT01034325001
+
+GATTTCAAAAGCATTCTGTTGTTCTTTGAGGTCAGCAACCTGACCAATAAA...
+
+GSVIVT01034326001
+
+TACGCTTGACAAGACGTCTCCATGTCCTTTCAAGCGACTTGCTACGCTATG...
+
+GSVIVT01034341001
+
+GTAGTGGTAAACCGTTGAGGTGGATGTCATGCTGTTGTCGACGGCGATTGG...
+
+These columns are separated by a tab character (\t).
+Promoter motifs are small DNA patterns nearby gene sequences to which the cellular machinery binds in
+order to help initiate the gene-transcription process. For example, the ABF protein binds to the DNA
+pattern "CACGTGGC" if it is near a gene in some plants. Some motifs are flexible and can be described by
+regular expressions; the GATA protein binds to any short DNA sequence matching the pattern
+"[AT]GATA[GA]". Use the grep() and gregexpr() functions in R to analyze the V. vinifera upstream
+regions above, and count the number of occurrences and location of the GATA motif for each gene. In
+addition describe the difference between grep() and gregexpr().
+In [ ]:
+
+%%R
+
+grep("[AT]GATA[GA]", grape$V2) #this line will tell us which samples contain a match
+for the given search criteria
+
+gregexpr("[AT]GATA[GA]", grape$V2) #this line gives more detailed information, such as
+how many matches there are and where in the given sequence they occur
+
+#the first line of code tells us that upstream regions one and two contain matches,
+where the second line of code tells us that upstream sequence #1 has three matches at
+322, 580, and 913bp. We are also told that sequence #2 has two matches at 76 and 986
+bp.
+
+

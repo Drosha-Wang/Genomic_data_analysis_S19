@@ -1,0 +1,998 @@
+Navigating the Unix Shell and
+Learning Basic Bash
+¶
+Tutorial Outline¶
+1. Getting ready
+2. How to do it...
+1. Viewing working directory
+2. Listing folder contents
+3. Changing directories
+4. Relative and absolute paths
+5. File and folder manipulations
+6. Viewing text files
+7. grep
+8. pipes
+3. Basic Bash Scripting
+4. Bash Variables
+1. Typing: Strings vs. Arithmetic
+2. Adding to your PATH
+3. Environment Variables and Arguments
+5. Conditional Control Flow
+1. If/Elif/Else Statements
+2. Comparators
+3. For Loops
+6. Output to stdout vs. stderr
+7. Theres more...
+
+Learning how to interact with the operating system using a command-line interface (or terminal) is a
+required skill in interactive computing and data analysis. We will use a command-line interface in many of
+the exercises through out this class. IPython and the Jupyter Notebook are typically launched from a
+terminal. Installing bioinformatics and Python packages are typically done from a terminal.
+In this exercise, we will show the very basics of the Unix shell, which is natively available in Linux
+distributions (such as Debian, Ubuntu, and so on) and macOS. On Windows 10, one can install the
+
+Windows Subsystem for Linux, a command-line interface to a Unix subsystem integrated with the
+Windows operating system (see https://docs.microsoft.com/windows/wsl/about).
+
+1. Getting ready
+Here are the instructions to open a Unix shell on macOS, Linux, and Windows. bash is the most common
+Unix shell and this is what we will use when interacting with the remote server.
+On macOS, bring up the Spotlight Search, type terminal, and press Enter.
+On Windows, follow the instructions at https://docs.microsoft.com/en-us/windows/wsl/install-win10. Then,
+open the Windows menu, type bash, and press Enter.
+On Linux, open the Dash by clicking on the top-left icon on the desktop, type terminal, and open the
+Terminal application.
+Tip: If you want to run this notebook as bash only in Jupyter, you need to install bash_kernel, available at
+https://github.com/takluyver/bash_kernel. Open a terminal and type "pip install bash_kernel && python -m
+bash_kernel.install" This will install a bash kernel in Jupyter, and it will allow you to run this recipe's code
+directly in the Notebook.
+
+2. How to do it...
+The Unix shell comes with hundreds of commands. We will see the most common ones in tutorial. In each
+of the code blocks we will be using the %%bash magic command and this will allow us to run bash code
+within the jupyter notebook without having to install the bash kernel. In addition, we can do one line bash
+commands using the !<cmd>, such as !pwd.
+Note: If we are working directly in the terminal the magic commands should not be used.
+In [1]:
+
+#lets list all magic commands to make sure we have access to the %%bash terminal from
+jupyter
+%lsmagic
+Out[1]:
+
+Available line magics:
+%alias
+%cd
+
+%alias_magic
+
+%clear
+
+%colors
+
+%doctest_mode
+
+%ed
+
+%lf
+
+%autoawait
+%conda
+%edit
+
+%lk
+
+%ll
+
+%load
+
+%logstop
+
+%ls
+
+%lsmagic
+
+%notebook
+%pprint
+
+%page
+
+%load_ext
+
+%pastebin
+
+%precision
+
+%config
+
+%env
+
+%lx
+
+%prun
+
+%autocall
+%gui
+
+%pdb
+
+%connect_info
+%hist
+
+%loadpy
+
+%macro
+
+%psource
+
+%debug
+
+%pushd
+
+%dhist
+
+%logstart
+
+%matplotlib
+
+%pfile
+
+%bookmark
+
+%killbgscripts
+
+%logon
+
+%man
+
+%pdoc
+
+%autosave
+
+%cp
+
+%history
+
+%logoff
+
+%magic
+
+%pdef
+
+%psearch
+
+%automagic
+
+%pinfo
+%pwd
+
+%dirs
+
+%ldir
+
+%less
+
+%logstate
+
+%mkdir
+%pinfo2
+
+%pycat
+
+%cat
+
+%more
+%pip
+
+%pylab
+
+%mv
+%popd
+
+%qtconsole
+
+%quickref
+
+%reset_selective
+%time
+
+%timeit
+
+%rm
+
+%recall
+%rmdir
+
+%unalias
+
+%rehashx
+%run
+
+%reload_ext
+
+%save
+
+%unload_ext
+
+%who
+
+%sc
+
+%rep
+
+%set_env
+
+%who_ls
+
+%whos
+
+%rerun
+%store
+
+%reset
+%sx
+
+%xdel
+
+%system
+
+%tb
+
+%xmode
+
+Available cell magics:
+%%!
+
+%%HTML
+
+%latex
+
+%%SVG
+
+%%bash
+
+%%capture
+
+%%markdown
+
+%%perl
+
+%%prun
+
+%script
+
+%%sh
+
+%%svg
+
+%%sx
+
+%%system
+
+%%debug
+
+%%pypy
+%%time
+
+%%file
+
+%%python
+
+%%html
+%%python2
+
+%%timeit
+
+%%javascript
+%%python3
+
+%%js
+
+%
+
+%%ruby
+
+%
+
+%%writefile
+
+Automagic is ON, % prefix IS NOT needed for line magics.
+A. The terminal lets us write text commands with the keyboard. We execute them by pressing Enter, and
+the output is displayed below the command. The working directory is the directory of our file system that is
+currently "active" in the terminal. We can get the absolute path of the working directory as follows:
+In [2]:
+
+%%bash
+pwd
+/data/home/WWU/BIOL497R/notebooks/Ex1_bash
+or
+In [3]:
+
+!pwd
+/data/home/WWU/BIOL497R/notebooks/Ex1_bash
+B. We can use the ls command to list all files and subdirectories in the working directory as follows:
+In [5]:
+
+%%bash
+ls ~/BIOL497R/
+data
+jupyterhub_cookie_secret
+jupyterhub.sqlite
+notebooks
+The -l option displays the directory contents as a detailed list, showing the permissions and owner of the
+files, the file sizes, and the last modified dates. Most shell commands come with many options that alter
+their behavior and that can be arbitrarily combined.
+In [6]:
+
+%%bash
+ls -l ~/BIOL497R/
+total 116
+drwxr-xr-x 3 zinkgrm domain users
+
+4096 Apr
+
+-rw------- 1 zinkgrm domain users
+
+65 Apr
+
+2 14:33 data
+2 14:38 jupyterhub_cookie_secret
+
+-rw-r--r-- 1 zinkgrm domain users 102400 Apr
+
+2 14:38 jupyterhub.sqlite
+
+drwxr-xr-x 8 zinkgrm domain users
+
+2 14:33 notebooks
+
+4096 Apr
+
+C. We use the cd command to navigate between subdirectories. The current directory is named . (single
+dot), and the parent directory is named ../ (double dot):
+In [7]:
+
+%%bash
+cd data
+pwd
+/data/home/WWU/BIOL497R/notebooks/Ex1_bash/data
+In [8]:
+
+%%bash
+cd ../
+pwd
+/data/home/WWU/BIOL497R/notebooks
+D. Paths can be specified as relative (depending on a reference directory, generally the working directory)
+or absolute. The home directory, specified as ~, contains the user's personal files. Configuration files are
+often stored in a directory like ~/.program_name. For example, ~/.ipython contains configuration files of
+IPython:
+In [9]:
+
+%%bash
+ls -la ~/.ipython
+total 20
+drwxr-xr-x 5 zinkgrm domain users
+
+4096 Apr
+
+2 14:45 .
+
+drwxr-x--- 9 zinkgrm biol497r-instructors 4096 Apr
+
+2 14:45 ..
+
+drwxr-xr-x 2 zinkgrm domain users
+
+4096 Apr
+
+2 14:45 extensions
+
+drwxr-xr-x 2 zinkgrm domain users
+
+4096 Apr
+
+2 14:45 nbextensions
+
+drwxr-xr-x 7 zinkgrm domain users
+
+4096 Apr
+
+2 14:46 profile_default
+
+In most terminals, we can use the arrow keys on the keyboard to navigate in the history of past
+commands. Also, the Tab key enables tab completion, which automatically completes the first characters
+of a command or a file. For example, typing ls -la ~/.ipy and pressing Tab would automatically
+complete to ls -la ~/.ipython, or it would present the list of possible options if there are several files or
+directories that begin with ~/.ipy.
+E. We can create, move, rename, copy, delete files and directories from the terminal:
+In [10]:
+
+%%bash
+ls
+Basic_bash.ipynb
+basic.txt
+data
+HelloUser.sh
+helloworld.sh
+Jupiter_home.png
+large.fasta
+medium.fasta
+myfile.txt
+notebook.tex
+printargs.sh
+small.fasta
+In [12]:
+
+%%bash
+## update to new content ##
+# We create an empty directory:
+mkdir ~/nb_files
+# we check to see if it was made
+ls ~/
+Anaconda2-2018.12-Linux-x86_64.sh
+BIOL497R
+jupyterhub_config.py
+jupyterhub_cookie_secret
+jupyterhub-proxy.pid
+jupyterhub.sqlite
+nb_files
+
+mkdir: cannot create directory ‘/home/WWU/zinkgrm/nb_files’: File exists
+In [13]:
+
+%%bash
+# We copy all notebook files into the new directory:
+cp *.ipynb ~/nb_files
+# We rename the directory and check to see if it was renamed:
+mv ~/nb_files ~/notebook_files
+ls
+# We check what files are contained in the new directory:
+ls ~/notebook_files
+Basic_bash.ipynb
+basic.txt
+data
+HelloUser.sh
+helloworld.sh
+Jupiter_home.png
+large.fasta
+medium.fasta
+myfile.txt
+notebook.tex
+printargs.sh
+small.fasta
+Basic_bash.ipynb
+In [14]:
+
+%%bash
+#This command will fail because the folder is not empty
+rmdir ~/notebook_files
+# First remove files in the folder
+rm ~/notebook_files/*
+# Then remove folder
+rmdir ~/notebook_files
+# Check
+ls ~/
+
+Anaconda2-2018.12-Linux-x86_64.sh
+BIOL497R
+jupyterhub_config.py
+jupyterhub_cookie_secret
+jupyterhub-proxy.pid
+jupyterhub.sqlite
+rmdir: failed to remove '/home/WWU/zinkgrm/notebook_files': Directory not empty
+The rm command lets us delete files and directories. The rm -rf path deletes the given path recursively,
+even if subdirectories are not empty. It is an extremely dangerous command as it cannot be undone: the
+files are immediately and permanently deleted, they do not go into a trash directory first. See
+https://github.com/sindresorhus/guides/blob/master/how-not-to-rm-yourself.md for more details.
+F. There are several useful commands to deal with text files:
+In [15]:
+
+%%bash
+# Show the first three lines of a text file:
+head -n 3 basic.txt
+Hi
+this
+is test file
+In [16]:
+
+%%bash
+# Show the last line of a text file:
+tail -n 1 basic.txt
+ABCD EFG
+In [17]:
+
+%%bash
+# We display some text:
+echo "Hello world!"
+Hello world!
+In [18]:
+
+%%bash
+
+# We redirect the output of a command to
+# a text file with `>`:
+echo "Hello world!" > myfile.txt
+# We display the entire contents of the file:
+cat myfile.txt
+Hello world!
+G. The grep command lets us search substrings in text and is an acronym for “Global Regular Expression
+Print”. Now let’s go on to some practical examples of using grep. To better understand the results, I’ve
+created a simple text file basic.txt on which we will run our grep searches; the file contains the following
+lines:
+In [19]:
+
+!head basic.txt
+Hi
+this
+is test file
+to carry out few regular expressions
+practical with grep
+123 456
+Abcd
+ABCD EFG
+We can do a case-insensitive search using the -i option:
+In [20]:
+
+%%bash
+grep -i 'abcd' basic.txt
+Abcd
+ABCD EFG
+Note: By default grep prints the results of the entire line. To restrict the print to the search pattern, add
+the -o option.
+We can count the number of occurances of a match by using the -c option:
+In [21]:
+
+%%bash
+grep -c 'is' basic.txt
+2
+
+We can use the -Eo option to find all instances that match, test followed by a word (using regular
+expressions):
+In [22]:
+
+%%bash
+grep -Eo "test \w+" basic.txt
+test file
+H. A major strength of the Unix shell is that commands can be combined with pipes: the output of one
+command can be directly transferred to the input of another command:
+In [23]:
+
+%%bash
+echo "This is a Unix shell" | grep -Eo "Unix \w+"
+Unix shell
+
+3. Basic Bash Scripting
+What we have been doing so far is single operations per command line. Next, we are going to see how to
+combine multiple operations and some programming logic to build small scripts to perform basic utilities.
+https://www.usna.edu/Users/cs/aviv/classes/ic221/s17/lab/02/lab.html
+
+Hello World¶
+Scripting is synonymous with programming — it is programming — except it's generally considered more
+light weight. For the scripts we'll write in this class, the commands will be stored in a file, but that file is
+interpreted by the bash shell. That means each line actually runs like a sequence of command lines
+executed in the order they apear in the file as if they were typed onto the command line.
+You must indicate that you wish for the your script to be treated as such by designating which program
+should be interpreting the command lines. To make that designation, we use a shabang symbol #! symbol
+followed by the path to a program. For this section, that program is going to be bash, namely the shell. To
+find out the path we can use the command which bash.
+Next, we want to write our first program using a text editor (nano), namely to print "Hello World," so let's
+take a look at that first.
+In [24]:
+
+%%bash
+less helloworld.sh
+#!/bin/bash
+
+echo "Hello World"
+
+# This is a comment
+
+You can find the script helloworld.sh in the examples folder in the lab directory. By convention, all bash
+scripts, or shell scripts, have a file type .sh, and we will use that convention in this class.
+On line 1, there is the shebang tells the shell what programming language to use to interpret the code,
+such as bash.
+On line 3, there is the actual command to print to standard out, "Hello World", as well as a comment,
+anything following a "#". The echo command echoes back anything it is given to stdout, in this case, the
+string "Hello World."
+Several command-line text editors are available, such as pico, nano, or vi. Learning these text editors
+requires time and effort, especially vi. One of the most user friendly text editors is nano. From a terminal,
+create a script in your home directory nano ~/helloworld.sh. We will go through a tutorial about how to
+use nano and and the associated keystrokes to navigate. To open a terminal, go the the Jupyter home
+screen and select New -> Terminal. This will open a new page with a bash cammand line terminal.
+
+Next, you have to make the file executable using chmod before we can execute the program. You will
+notice in the ls -l output that the file now has x associated with the permissions.
+In [ ]:
+
+%%bash
+chmod +x ~/helloworld.sh
+ls -l ~/helloworld.sh ## Make sure this file shows up in your home directory or you
+will get an error
+Now you are ready to execute with ~/helloworld.sh or bash ~/helloworld.sh
+In [6]:
+
+%%bash
+~/helloworld.sh
+Hello World
+
+4. Bash Variables
+You can assign variables in bash just like in other programming languages, but you refer to variables using
+a $ symbol. Note that spacing is important, the assignment must occur immediately following the equal
+sign. If there are spaces in the string value, use quotes.
+In [26]:
+
+%%bash
+name=matt
+echo "Your name is $name"
+Your name is matt
+Information can also be captured from the stdout of a program using $(...). The below example uses wc
+with the -l option to count the number of lines in the file.
+In [27]:
+
+%%bash
+count=$(wc -l < large.fasta)
+echo $count
+111259
+In [28]:
+
+%%bash
+name="Matt Zink"
+echo "Your name is $name"
+Your name is Matt Zink
+Finally, variable replacement, that is substituting a variable for its value, occurs throughout a script,
+including in quotes, like above.
+
+A. Typing: Strings vs. Arithmetic
+One major difference between bash, which is a scripting language, and R or python, is that it is not
+strongly typed. That means, you don't need to identify the type of the data you're storing to a variable.
+Instead, you have to provide some context for how you want the data to be interpreted, otherwise, by
+default, it will be treated like strings and + is concatenation.
+In [29]:
+
+%%bash
+
+n=1
+n=1+$n
+echo $n
+
+#<-- print "1+1" not 2!
+
+1+1
+To peform arithmetic operations, you use the let operations.
+In [30]:
+
+%%bash
+n=1
+let n=1+$n #<-- use quotes if you need white space
+echo $n
+
+#<-- prints 2!
+
+2
+There is also no such things as floats in bash. Everything is a numeric integer.
+
+B. Adding to your PATH
+As you develop new tools for this class, you would like to be able to call on them directly, like you do other
+commmand line tools. To do this, those scripts/programs need to exist on the $PATH.
+In [31]:
+
+%%bash
+# see what $HOME and $PATH are set to
+echo $HOME
+echo $PATH
+/home/WWU/zinkgrm
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/
+games:/snap/bin:/opt/anaconda2/bin
+The standard, Unix way to do this, is to create a directory in your home folder called ~/bin and place all
+newly create commands there. Unfortunately, your bin directory may not be on the search path yet. To
+add it, you have to update the enviroment variable PATH. The PATH can be permanently updated by
+modifying the PATH line in the file called .bashrc using a text editor, such as nano.
+Note: When specifying a PATH, the folders are seperated by : .
+In [ ]:
+
+%%bash
+mkdir ~/bin
+
+#create bin folder
+
+mv ~/helloworld.sh ~/bin/
+export PATH=$HOME/bin:$PATH
+
+#mv script to the new folder
+#modify your path to include the $HOME/bin:
+
+echo $PATH
+This will place ~/bin at the start of the search path while preserving prior values on the path. The export
+command sets the assignment globally, across all scripts and programs that are to be run from the shell.
+
+C. Environment Variables and Arguments
+In a bash script, and in bash shells in general, there are a number of environment variables available for
+convenience. Once such environment variable we've seen previously is the PATH variable:
+By convention all environment variables are upper case. Below are some really useful ones to know:
+Variable
+
+Description
+
+\$USER
+
+the current user
+
+\$HOME
+
+the home directory
+
+\$PWD
+
+The current working directory
+
+\$SHELL
+
+The name of the shell you are currently running
+
+In [33]:
+
+%%bash
+echo $PWD
+/data/home/WWU/BIOL497R/notebooks/Ex1_bash
+For example, this program HelloUser.sh prints a helpful message
+In [34]:
+
+%%bash
+#look at the script
+less HelloUser.sh
+#!/bin/bash
+echo "Hello $USER!"
+echo "You are currently here: $PWD"
+echo "But, your home directory here: $HOME"
+In [35]:
+
+%%bash
+
+#execute the script
+bash HelloUser.sh
+Hello zinkgrm!
+You are currently here: /data/home/WWU/BIOL497R/notebooks/Ex1_bash
+But, your home directory here: /home/WWU/zinkgrm
+Additionally, there are environment variables for arguments passed to the shell script. These are $0, $1,
+$2, etc, where the number refers to the command line argument. For example, consider the script,
+printargs.sh
+In [36]:
+
+%%bash
+less printargs.sh
+#!/bin/bash
+echo "arg 0: $0"
+echo "arg 1: $1"
+echo "arg 2: $2"
+echo "arg 3: $3"
+echo "arg 4: $4"
+
+In [37]:
+
+%%bash
+#args
+
+0
+
+1 2 3 4
+
+#
+
+|
+
+| | | |
+
+bash printargs.sh x y z
+arg 0: printargs.sh
+arg 1: x
+arg 2: y
+arg 3: z
+arg 4:
+Argument 0 always refers to the script, and each $1 refers to the arguments to the script. The script prints
+the first 4 arguments, but there isn't a fourth argument. $4 is treated as the empty string.
+To refer to all arguments, not including $0, use $*. $# is special variable set to the number of arguments.
+Try adding the following code to the printargs.sh script.
+In [38]:
+
+%%bash
+
+echo "There are $# number of args"
+echo "Arguments _not_ including the name of the script: $*"
+There are 0 number of args
+Arguments _not_ including the name of the script:
+
+5. Conditional Control Flow
+Like any reasonable programming environment, you want to do more than just print things out in an
+iterative fashion. We need a mechanism to change the program based on some condition, like if/else
+statements and looping.
+
+A. If/Elif/Else Statements
+The format of an if statement is like so:
+
+if cmd
+then
+cmd
+elif cmd
+then
+cmd
+else
+cmd
+fi
+
+#<-- close off the if statemet with fi
+
+The if cmd part proceeds if the cmd succeeds, that is, it doesn't have exit with failure. In general, the cmd
+used in if blocks and others are the [ ] which checks conditions. With the [ ] you can do simple
+comparators and other operations. Here is a an examples script that checks if the script was run from the
+home directory:
+In [39]:
+
+%%bash
+echo "Hello $USER"
+if [ $HOME == $PWD ]
+then
+echo "Good, you're in your home directory: $HOME"
+else
+echo "What are you doing away from home?!?"
+cd $HOME
+
+echo "Now you are in your home directory: $PWD"
+fi
+Hello zinkgrm
+What are you doing away from home?!?
+Now you are in your home directory: /home/WWU/zinkgrm
+There are two things of note here. First, the [ $HOME == $PWD ] is a logical command that succeeds only
+when $HOME is the present working directory. Also, when you change directories within a script, you are not
+changing the directory of the shell you ran the script from, just the present working directory of the script
+itself.
+
+B. Comparators
+Conditions in bash exist within brackets, [ ], but the [ ] is actually a command that returns true if the
+conditions were met. For string comparators, you can use = and ! but for numerics, you need to use
+options to the [ ] command. See below for the varied usages.
+Note: Remember when we create variables in bash, we create then by var=value and when the variable
+is recalled or used, we use $var.
+In [40]:
+
+%%bash
+#string
+var=adam
+user=Matt
+if [ $user = $var ] ; then echo "string $user equals $var" ; fi
+if [ $user == $var ] ; then echo "string $user equals $var" ; fi
+if [ $user != $var ] ; then echo "string $user does not equal $var" ; fi
+if [ -z $user ] ; then echo "string $user is empty!"; fi
+if [ -n $user ] ; then echo "string $user is not empty!"; fi
+#numeric
+a=1
+b=2
+if [ $a -eq $b ] ; then echo "number $b equals $a" ; fi
+if [ $a -ne $b ] ; then echo "number $b does not equal $a" ; fi
+if [ $a -gt $b ] ; then echo "$a is greater than $b" ; fi
+if [ $a -lt $b ] ; then echo "$a is less than $b" ; fi
+#file/dir properties
+file="basic.txt"
+if [ -d $file ] ; then echo "$file exists and is a directory!" ; fi
+if [ -e $file ] ; then echo "$file exists!" ; fi
+if [ -f $file ] ; then echo "$file exists and is not a directory!" ; fi
+
+if [ -r $file ] ; then echo "$file exists and is readable!" ; fi
+if [ -s $file ] ; then echo "$file exists and has size greater than zero!" ; fi
+if [ -w $file ] ; then echo "$file exists and is writable!" ; fi
+if [ -x $file ] ; then echo "$file exists and is executable!" ; fi
+# NOTE: Since everything's on the same line, I need ;s between
+# the if and the then and between the then and the fi.
+string Matt does not equal adam
+string Matt is not empty!
+number 2 does not equal 1
+1 is less than 2
+basic.txt exists!
+basic.txt exists and is not a directory!
+basic.txt exists and is readable!
+basic.txt exists and has size greater than zero!
+basic.txt exists and is writable!
+Additionally, you can use the standard set of conditional operators:
+
+if [ $condition1 ] || [ $condition2 ] ; do echo "either condition1 or condition2 are
+true"; done
+if [ $condition1 ] && [ $condition2 ] ; do echo "condition1 and condition2 are true";
+done
+if [ ! $condition1 ] ; do echo "condtion1 is not true"; done
+
+C. For Loops
+A for loop has a similar structure as in R and for loops iterate for each item provided:
+
+for var in str1 str2 .. strn
+do
+# commands
+# $var is available for references, set to str1 -> strn in each loop
+done
+In [41]:
+
+%%bash
+for i in 1 2 3 4 a b c
+do
+echo "Item: $i"
+done
+Item: 1
+
+Item: 2
+Item: 3
+Item: 4
+Item: a
+Item: b
+Item: c
+
+6. Output to stdout vs. stderr
+A bash script is just like other command line tools we've seen so far with respect to output and input. The
+same standard file names and file descriptor numbers are automatically provided as well as the ability to
+redirect them.
+When you put a command in a script that writes to standard out, like say head or cat command, the output
+will also be part of the standard output of the script, just like echo was above. Similarly, if a command has
+an error and writes to standard error, that will also be a part of the script's standard error.
+If you want to write to standard error directly in your script, you will redirect the output of the echo
+command.
+In [42]:
+
+%%bash
+echo "ERROR: Something bad happened"
+echo "ERROR: Something bad happened"
+
+#<-- direct to stdout
+1>&2
+
+ERROR: Something bad happened
+ERROR: Something bad happened
+In [43]:
+
+%%bash
+H=8
+if [ $H == 10 ]
+then
+echo "The equality is TRUE"
+else
+echo "ERROR: The equality is FALSE" 1>&2
+fi
+ERROR: The equality is FALSE
+
+#<-- redirect file descriptor 1 to 2
+
+7. There's more...
+We only scratched the surface of the Unix shell in this exercise. There are many other commands that can
+be combined in an infinite number of ways. Many repetitive tasks that would take hours of manual work
+can be done in a few minutes by writing the appropriate commands. Mastering the Unix shell may take a
+lot of effort, but it leads to dramatic time gains in the long term.
+Here are a few references:
+•
+
+Linux tutorial at https://ryanstutorials.net/linuxtutorial/
+
+•
+
+Bash commands at https://ss64.com/bash/
+
+•
+
+Learn Bash in Y minutes, at https://learnxinyminutes.com/docs/bash/
+
+•
+
+Learn the shell interactively, at http://www.learnshell.org/
+
+•
+
+The fish shell, at https://fishshell.com/
+
+•
+
+xonsh, a Python-powered shell, at http://xon.sh/
+
+•
+
+Windows Subsystem for Linux, at https://docs.microsoft.com/windows/wsl/about
+
+This tutorial was adapted from https://ipython-books.github.io/21-learning-the-basics-of-the-unix-shell/
+
+In [ ]:
+
+
